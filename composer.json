@@ -1,0 +1,27 @@
+{
+    "name": "leochien/laravel-spgateway",
+    "description": "spgateway library for laravel",
+    "keywords": ["library", "spgateway"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [{
+        "name": "LeoChien",
+        "email": "leo@hourmasters.com"
+    }],
+    "require": {
+        "php": ">=7",
+        "guzzlehttp/guzzle": "^6.2@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "LeoChien\\Spgateway\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LeoChien\\Spgateway\\SpgatewayServiceProvider"
+            ]
+        }
+    }
+}
