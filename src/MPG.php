@@ -2,17 +2,27 @@
 
 namespace LeoChien\Spgateway;
 
+use Exception;
+use \GuzzleHttp\Client;
+
 class MPG
 {
     private $apiUrl;
+    private $client;
 
     public function __construct()
     {
+        $this->apiUrl = [];
         if (env('APP_ENV') === 'production') {
-            $this->apiUrl = 'https://core.spgateway.com/MPG/mpg_gateway';
+            $this->apiUrl['MPG_API'] = 'https://core.spgateway.com/MPG/mpg_gateway';
+            $this->apiUrl['QUERY_TRADE_INFO_API'] = 'https://core.spgateway.com/API/QueryTradeInfo';
         } else {
-            $this->apiUrl = 'https://ccore.spgateway.com/MPG/mpg_gateway';
+            $this->apiUrl['MPG_API']
+                = 'https://ccore.spgateway.com/MPG/mpg_gateway';
+            $this->apiUrl['QUERY_TRADE_INFO_API'] = 'https://ccore.spgateway.com/API/QueryTradeInfo';
         }
+
+        $this->client = new Client();
     }
 
     public function generateOrder(array $form)
@@ -21,38 +31,39 @@ class MPG
             $validator = $this->formValidator($form);
 
             if ($validator !== true) {
-                throw new Exception($validator['field'] . $validator['message']);
+                throw new Exception($validator['field']
+                    . $validator['message']);
             }
 
             $order = [
-                'MerchantID' => config('spgateway.mpg.MerchantID'),
-                'RespondType' => $form['RespondType'] ?? 'JSON',
-                'TimeStamp' => time(),
-                'Version' => config('spgateway.mpg.Version'),
-                'LangType' => $form['LangType'] ?? 'zh-tw',
+                'MerchantID'      => config('spgateway.mpg.MerchantID'),
+                'RespondType'     => $form['RespondType'] ?? 'JSON',
+                'TimeStamp'       => time(),
+                'Version'         => config('spgateway.mpg.Version'),
+                'LangType'        => $form['LangType'] ?? 'zh-tw',
                 'MerchantOrderNo' => $form['MerchantOrderNo'],
-                'Amt' => $form['Amt'],
-                'ItemDesc' => $form['ItemDesc'],
-                'TradeLimit' => $form['TradeLimit'] ?? 180,
-                'ExpireDate' => $form['ExpireDate'] ?? null,
-                'ExpireTime' => $form['ExpireTime'] ?? null,
-                'ReturnURL' => $form['ReturnURL'] ?? null,
-                'NotifyURL' => $form['NotifyURL'] ?? null,
-                'CustomerURL' => $form['CustomerURL'] ?? null,
-                'ClientBackURL' => $form['ClientBackURL'] ?? null,
-                'Email' => $form['Email'],
-                'EmailModify' => $form['EmailModify'] ?? 1,
-                'LoginType' => $form['LoginType'] ?? 0,
-                'OrderComment' => $form['OrderComment'] ?? null,
-                'TokenTerm' => $form['TokenTerm'] ?? null,
-                'CREDIT' => $form['CREDIT'] ?? null,
-                'CreditRed' => $form['CreditRed'] ?? null,
-                'InstFlag' => $form['InstFlag'] ?? null,
-                'UNIONPAY' => $form['UNIONPAY'] ?? null,
-                'WEBATM' => $form['WEBATM'] ?? null,
-                'VACC' => $form['VACC'] ?? null,
-                'CVS' => $form['CVS'] ?? null,
-                'BARCODE' => $form['BARCODE'] ?? null,
+                'Amt'             => $form['Amt'],
+                'ItemDesc'        => $form['ItemDesc'],
+                'TradeLimit'      => $form['TradeLimit'] ?? 180,
+                'ExpireDate'      => $form['ExpireDate'] ?? null,
+                'ExpireTime'      => $form['ExpireTime'] ?? null,
+                'ReturnURL'       => $form['ReturnURL'] ?? null,
+                'NotifyURL'       => $form['NotifyURL'] ?? null,
+                'CustomerURL'     => $form['CustomerURL'] ?? null,
+                'ClientBackURL'   => $form['ClientBackURL'] ?? null,
+                'Email'           => $form['Email'],
+                'EmailModify'     => $form['EmailModify'] ?? 1,
+                'LoginType'       => $form['LoginType'] ?? 0,
+                'OrderComment'    => $form['OrderComment'] ?? null,
+                'TokenTerm'       => $form['TokenTerm'] ?? null,
+                'CREDIT'          => $form['CREDIT'] ?? null,
+                'CreditRed'       => $form['CreditRed'] ?? null,
+                'InstFlag'        => $form['InstFlag'] ?? null,
+                'UNIONPAY'        => $form['UNIONPAY'] ?? null,
+                'WEBATM'          => $form['WEBATM'] ?? null,
+                'VACC'            => $form['VACC'] ?? null,
+                'CVS'             => $form['CVS'] ?? null,
+                'BARCODE'         => $form['BARCODE'] ?? null,
             ];
 
             $order = array_filter($order, function ($value) {
@@ -70,7 +81,8 @@ class MPG
 
     public function sendOrder($order)
     {
-        return view('spgateway::send-order', ['apiUrl' => $this->apiUrl, 'order' => $order]);
+        return view('spgateway::send-order',
+            ['apiUrl' => $this->apiUrl['MPG_API'], 'order' => $order]);
     }
 
     private function formValidator($form)
@@ -104,7 +116,7 @@ class MPG
 
         if (isset($form['ExpireDate'])) {
             if (date_parse_from_format('Y-m-d',
-                $form['ExpireDate'])['error_count']
+                    $form['ExpireDate'])['error_count']
                 > 0
             ) {
                 return $this->errorMessage('ExpireDate',
@@ -120,7 +132,7 @@ class MPG
 
         if (isset($form['ExpireTime'])) {
             if (date_parse_from_format('H:i:s',
-                $form['ExpireTime'])['error_count']
+                    $form['ExpireTime'])['error_count']
                 > 0
             ) {
                 return $this->errorMessage('ExpireTime',
@@ -246,7 +258,7 @@ class MPG
     private function errorMessage($field, $message)
     {
         return [
-            'field' => $field,
+            'field'   => $field,
             'message' => $message,
         ];
     }
@@ -254,11 +266,11 @@ class MPG
     private function generateCheckValue($order)
     {
         $chkRes = [
-            'Amt' => $order['Amt'],
-            'MerchantID' => config('spgateway.mpg.MerchantID'),
+            'Amt'             => $order['Amt'],
+            'MerchantID'      => config('spgateway.mpg.MerchantID'),
             'MerchantOrderNo' => $order['MerchantOrderNo'],
-            'TimeStamp' => $order['TimeStamp'],
-            'Version' => config('spgateway.mpg.Version'),
+            'TimeStamp'       => $order['TimeStamp'],
+            'Version'         => config('spgateway.mpg.Version'),
         ];
 
         ksort($chkRes, SORT_REGULAR);
@@ -267,6 +279,45 @@ class MPG
         $hashIV = config('spgateway.mpg.HashIV');
         $checkValue = strtoupper(hash('sha256',
             "HashKey={$hashKey}&{$checkMaster}&HashIV={$hashIV}"));
+
+        return $checkValue;
+    }
+
+    public function searchOrder(array $params)
+    {
+        $order = [
+            'MerchantID'      => config('spgateway.mpg.MerchantID'),
+            'Version'         => '1.1',
+            'RespondType'     => $params['RespondType'] ?? 'JSON',
+            'TimeStamp'       => time(),
+            'MerchantOrderNo' => $params['MerchantOrderNo'],
+            'Amt'             => $params['Amt'],
+        ];
+
+        $order['CheckValue'] = $this->generateTradeInfoCheckValue($order);
+
+        $res = $this->client->request('POST', $this->apiUrl['QUERY_TRADE_INFO_API'], [
+            'form_params' => $order,
+            'verify' => false
+        ])->getBody()->getContents();
+
+        $result = json_decode($res);
+
+        return $result;
+    }
+
+    protected function generateTradeInfoCheckValue($params)
+    {
+        $data = [
+            'IV'              => config('spgateway.mpg.HashIV'),
+            'Amt'             => $params['Amt'],
+            'MerchantID'      => config('spgateway.mpg.MerchantID'),
+            'MerchantOrderNo' => $params['MerchantOrderNo'],
+            'Key'             => config('spgateway.mpg.HashKey'),
+        ];
+
+        $check_code_str = http_build_query($data);
+        $checkValue = strtoupper(hash("sha256", $check_code_str));
 
         return $checkValue;
     }

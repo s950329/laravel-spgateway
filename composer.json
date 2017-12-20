@@ -10,12 +10,15 @@
     }],
     "require": {
         "php": ">=7",
-        "guzzlehttp/guzzle": "^6.2@dev"
+        "guzzlehttp/guzzle": "~6.0"
     },
     "autoload": {
         "psr-4": {
             "LeoChien\\Spgateway\\": "src/"
         }
+    },
+    "config": {
+        "sort-packages": true
     },
     "extra": {
         "laravel": {
