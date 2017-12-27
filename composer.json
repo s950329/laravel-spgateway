@@ -24,7 +24,10 @@
         "laravel": {
             "providers": [
                 "LeoChien\\Spgateway\\SpgatewayServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Agent": "LeoChien\\Spgateway\\Facades\\Receipt"
+            }
         }
     }
 }

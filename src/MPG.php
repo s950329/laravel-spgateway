@@ -14,12 +14,15 @@ class MPG
     {
         $this->apiUrl = [];
         if (env('APP_ENV') === 'production') {
-            $this->apiUrl['MPG_API'] = 'https://core.spgateway.com/MPG/mpg_gateway';
-            $this->apiUrl['QUERY_TRADE_INFO_API'] = 'https://core.spgateway.com/API/QueryTradeInfo';
+            $this->apiUrl['MPG_API']
+                = 'https://core.spgateway.com/MPG/mpg_gateway';
+            $this->apiUrl['QUERY_TRADE_INFO_API']
+                = 'https://core.spgateway.com/API/QueryTradeInfo';
         } else {
             $this->apiUrl['MPG_API']
                 = 'https://ccore.spgateway.com/MPG/mpg_gateway';
-            $this->apiUrl['QUERY_TRADE_INFO_API'] = 'https://ccore.spgateway.com/API/QueryTradeInfo';
+            $this->apiUrl['QUERY_TRADE_INFO_API']
+                = 'https://ccore.spgateway.com/API/QueryTradeInfo';
         }
 
         $this->client = new Client();
@@ -283,6 +286,13 @@ class MPG
         return $checkValue;
     }
 
+    /**
+     * 搜尋訂單
+     *
+     * @param array $params
+     *
+     * @return mixed
+     */
     public function searchOrder(array $params)
     {
         $order = [
@@ -296,10 +306,11 @@ class MPG
 
         $order['CheckValue'] = $this->generateTradeInfoCheckValue($order);
 
-        $res = $this->client->request('POST', $this->apiUrl['QUERY_TRADE_INFO_API'], [
-            'form_params' => $order,
-            'verify' => false
-        ])->getBody()->getContents();
+        $res = $this->client->request('POST',
+            $this->apiUrl['QUERY_TRADE_INFO_API'], [
+                'form_params' => $order,
+                'verify'      => false
+            ])->getBody()->getContents();
 
         $result = json_decode($res);
 

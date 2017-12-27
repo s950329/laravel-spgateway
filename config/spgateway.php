@@ -40,8 +40,9 @@ return [
     | 這是用來開立智付通發票的相關設定，每項皆為必填
     |
      */
-    'ReceiptKey' => env('SPGATEWAY_RECEIPT_KEY'),
-    'ReceiptIV' => env('SPGATEWAY_RECEIPT_IV'),
-    'ReceiptMerchantID' => env('SPGATEWAY_RECEIPT_MERCHANT_ID', '3836438'),
-
+    'receipt' => [
+        'HashKey' => env('SPGATEWAY_RECEIPT_KEY'),
+        'HashIV' => env('SPGATEWAY_RECEIPT_IV'),
+        'MerchantID' => env('SPGATEWAY_RECEIPT_MERCHANT_ID', '3836438'),
+    ],
 ];
