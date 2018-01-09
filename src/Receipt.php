@@ -1,6 +1,6 @@
 <?php
 /**
- *
+ * 用來管理智付通發票系統
  *
  * User: Chu
  * Date: 2017/12/26
@@ -15,6 +15,7 @@ class Receipt
 {
     private $apiUrl;
     private $client;
+    private $encryptLibrary;
 
     public function __construct()
     {
@@ -31,6 +32,7 @@ class Receipt
         }
 
         $this->client = new Client();
+        $this->encryptLibrary = new EncryptLibrary();
     }
 
     public function createReceipt(
@@ -60,15 +62,16 @@ class Receipt
      * 產生智付通開立電子發票必要資訊
      *
      * @param array $params
+     * @param bool  $encrypt
      *
      * @return array
      */
     public function generateReceiptData(
-        array $params
+        array $params,
+        $encrypt = true
     ) {
         $params['TaxRate'] = $params['TaxRate'] ?? 5;
         $params['Category'] = $params['Category'] ?? 'B2C';
-
 
         $itemAmt = [];
         foreach ($params['ItemCount'] as $k => $v) {
@@ -117,52 +120,26 @@ class Receipt
             'Comment'          => $params['Comment'] ?? null
         ];
 
+        if($encrypt){
+            return $this->encryptReceiptData($postData);
+        } else {
+            return $postData;
+        }
+    }
+
+    public function encryptReceiptData($postData)
+    {
         $postData = array_filter($postData, function ($value) {
             return ($value !== null && $value !== false && $value !== '');
         });
 
         // 加密
-        $postDataEncrypted = $this->encryptPostData($postData);
+        $postDataEncrypted = $this->encryptLibrary->encryptPostData($postData);
 
         return [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
             'PostData_'   => $postDataEncrypted,
         ];
-    }
-
-    /**
-     * 智付通資料加密
-     *
-     * @param $postData
-     *
-     * @return string
-     */
-    public function encryptPostData(
-        $postData
-    ) {
-        // 所有資料與欄位使用 = 符號組合，並用 & 符號串起字串
-        $postData = http_build_query($postData);
-
-        // 加密字串
-        $post_data = trim(bin2hex(openssl_encrypt(
-            $this->addPadding($postData),
-            'AES-256-CBC',
-            config('spgateway.receipt.HashKey'),
-            OPENSSL_RAW_DATA | OPENSSL_NO_PADDING,
-            config('spgateway.receipt.HashIV')
-        )));
-
-        return $post_data;
-    }
-
-    public function addPadding(
-        $string,
-        $blocksize = 32
-    ) {
-        $len = strlen($string);
-        $pad = $blocksize - ($len % $blocksize);
-        $string .= str_repeat(chr($pad), $pad);
-        return $string;
     }
 
     public function calcTax($price, $tax)

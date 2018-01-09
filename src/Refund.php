@@ -1,6 +1,6 @@
 <?php
 /**
- *
+ * 用來退款
  *
  * User: Chu
  * Date: 2017/12/27
@@ -16,6 +16,7 @@ class Refund
 {
     private $apiUrl;
     private $client;
+    private $encryptLibrary;
 
     public function __construct()
     {
@@ -33,6 +34,7 @@ class Refund
         }
 
         $this->client = new Client();
+        $this->encryptLibrary = new EncryptLibrary();
     }
 
     /**
@@ -61,7 +63,6 @@ class Refund
                 = $this->generateCreditCancelPostData($MerchantOrderNo, $Amt,
                 $notifyUrl);
 
-            /* 寫入log */
             $res = $this->client->request('POST',
                 $this->apiUrl['CREDIT_CARD_CANCEL_API'], [
                     'form_params' => $creditCancelData,
@@ -79,8 +80,6 @@ class Refund
                 $refundData
                     = $this->generateCreditClosePostData($MerchantOrderNo, $Amt);
 
-                /* 寫入log */
-                /* 寫入log */
                 $res = $this->client->request('POST',
                     $this->apiUrl['REFUND_API'], [
                         'form_params' => $refundData,
@@ -151,46 +150,11 @@ class Refund
             'CloseType'       => 2,
         ];
 
-        $PostData_ = $this->encryptPostData($postData);
+        $PostData_ = $this->encryptLibrary->encryptPostData($postData);
 
         return [
             'MerchantID_' => env('SPGATEWAY_MERCHANT_ID'),
             'PostData_'   => $PostData_,
         ];
-    }
-
-    /**
-     * 加密欄位
-     *
-     * @param $postData
-     *
-     * @return string
-     */
-    public function encryptPostData($postData)
-    {
-        // 所有資料與欄位使用 = 符號組合，並用 & 符號串起字串
-        $postData = http_build_query($postData);
-
-        // 加密字串
-        $post_data = trim(bin2hex(openssl_encrypt(
-            $this->addPadding($postData),
-            'AES-256-CBC',
-            env('SPGATEWAY_HASH_KEY'),
-            OPENSSL_RAW_DATA | OPENSSL_NO_PADDING,
-            env('SPGATEWAY_HASH_IV')
-        )));
-
-        return $post_data;
-    }
-
-    public
-    function addPadding(
-        $string,
-        $blocksize = 32
-    ) {
-        $len = strlen($string);
-        $pad = $blocksize - ($len % $blocksize);
-        $string .= str_repeat(chr($pad), $pad);
-        return $string;
     }
 }
