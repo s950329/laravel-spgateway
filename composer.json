@@ -25,6 +25,9 @@
             "providers": [
                 "LeoChien\\Spgateway\\SpgatewayServiceProvider"
             ]
+        },
+        "aliases": {
+            "Spgateway": "LeoChien\\Spgateway\\Facades"
         }
     }
 }
