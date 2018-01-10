@@ -39,7 +39,7 @@ php artisan vendor:publish --provider="LeoChien\Spgateway\SpgatewayServiceProvid
 
 3. 修改 `config/spgateway.php` 中對應的參數。
 
-4. 或在 `.env` 中加入下列設定
+4. 在 `.env` 中加入下列設定
 
 ```
 # 金流系統設定
@@ -49,71 +49,481 @@ SPGATEWAY_HASH_IV=
 # 金流合作推廣商系統設定
 SPGATEWAY_COMPANY_KEY=
 SPGATEWAY_COMPANY_IV=
-SPGATEWAY_PARTNER_ID=hourmaster
-SPGATEWAY_MERCHANT_ID_PREFIX=HMS
-SPGATEWAY_MERCHANT_ID=MS3133867
+SPGATEWAY_PARTNER_ID=
+SPGATEWAY_MERCHANT_ID_PREFIX=
+SPGATEWAY_MERCHANT_ID=
 
 # 發票系統設定
-SPGATEWAY_RECEIPT_KEY=gJpgVlZVvmBhnMR81f1gOT1jxVTFYAMe
-SPGATEWAY_RECEIPT_IV=jbufwta2QLkdyblA
-SPGATEWAY_RECEIPT_MERCHANT_ID=3836438
+SPGATEWAY_RECEIPT_KEY=
+SPGATEWAY_RECEIPT_IV=
+SPGATEWAY_RECEIPT_MERCHANT_ID=
 ```
 
 ## 使用
 
-### MPG 串接
+### 多功能收款 MPG 串接
 
-#### 使用範例
-
-1. 產生智付通訂單資料
+#### 快速上手
 ```
-$mpg = new MPG();
+// 產生智付通訂單資料
+$order = MPG::generate(
+    100,
+    'leo@hourmasters.com',
+    '測試商品'
+);
 
-$order = $mpg->generateOrder([
-    'MerchantOrderNo' => '20171226',
-    'Amt'             => 100,
-    'ItemDesc'        => '測試商品',
-    'Email'           => 'leo@hourmasters.com'
+// $order的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+
+// 前台送出表單到智付通
+return $order->send();
+```
+
+#### 可用方法
+
+> #### generate ($amount, $email, $itemDesc \[, $params \])
+
+產生智付通建立訂單必要欄位
+
+##### 參數
+
+1. `amount (Integer)`: 訂單金額
+2. `email (String)`: 訂購人Email
+3. `itemDesc (String)`: 商品描述
+5. `[ params (Array) ]`: 其他可選參數，詳見[參數表](#參數表)
+
+##### 回傳
+
+1. `(Class)`: MPG Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料
+
+##### 使用範例
+```
+$order = MPG::generate(
+    100,
+    'leo@hourmasters.com',
+    '測試商品'
+);
+```
+
+##### 參數表
+
+| 欄位            |     型態     |       可選值      |   預設  | 備註                              |
+|-----------------|:------------:|:-----------------:|:-------:|-----------------------------------|
+| MerchantOrderNo |    Varchar(20)    |                   |         | 商店自訂編號，若無填寫則由套件產生                      |
+| LangType        |    String    |   `zh-tw` / `en`  | `zh-tw` |                                   |
+| TradeLimit      |    Number    |      60 ~ 900     |   180   |                                   |
+| ExpireDate      | String (Ymd) |                   |         |      範例：20171231                             |
+| ExpireTime      | String (His) |                   |         |      範例：183005                             |
+| ReturnURL       |      Url     |                   |         |                                   |
+| NotifyURL       |      Url     |                   |         |                                   |
+| CustomerURL     |      Url     |                   |         |                                   |
+| ClientBackURL   |      Url     |                   |         |                                   |
+| EmailModify     |    Number    |     `0` / `1`     |    1    |                                   |
+| LoginType       |    Number    |     `0` / `1`     |    0    |                                   |
+| OrderComment    |    String    |                   |         |                                   |
+| TokenTerm       |    String    |                   |         | 信用卡快速結帳                    |
+| CREDIT          |    Number    |     `0` / `1`     |         | 信用卡一次付清                    |
+| CreditRed       |    Number    |     `0` / `1`     |         | 信用卡紅利                        |
+| InstFlag        |    Number    |     `0` / `1`     |         | 信用卡分期付款                    |
+| UNIONPAY        |    Number    |     `0` / `1`     |         | 銀聯卡                            |
+| WEBATM          |    Number    |     `0` / `1`     |         | WebATM                            |
+| VACC            |    Number    |     `0` / `1`     |         | ATM轉帳                           |
+| CVS             |    Number    |     `0` / `1`     |         | 超商代碼繳費                      |
+| BARCODE         |    Number    |     `0` / `1`     |         | 條碼繳費，訂單金額需介於20～20000 |
+
+##### 備註
+* 支付方式若無選擇，默認開啟智付通後台設定方式
+* 若無傳送訂單編號預設會建立年月日時分秒+6位隨機字串的訂單編號，e.g. 20180110151950mTHuUY
+
+> #### send ()
+
+前台送出智付通訂單建立表單
+
+##### 使用範例
+```
+$order->send();
+```
+
+> #### parse ($tradeInfo)
+
+解析智付通交易結果回傳參數
+
+##### 參數
+
+1. `tradeInfo (String)`: 智付通回傳，經AES加密之交易資料
+
+##### 回傳
+詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/4.pdf)第四節：交易查詢系統回應訊息
+```
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
+```
+
+##### 使用範例
+```
+$tradeInfo = MPG::parse(request()->TradeInfo);
+```
+
+> #### search ($orderNo, $amount)
+
+產生智付通查詢訂單必要欄位
+
+##### 參數
+
+1. `orderNo (String)`: 訂單編號
+2. `amount (Integer)`: 訂單金額
+
+##### 回傳
+
+```
+{
+    "Status": "..."
+    "Message": "查詢成功"
+    "Result": {...}
+}
+```
+
+##### 使用範例
+```
+// 查詢智付通訂單
+$order = MPG::search(
+    '20180110151950mTHuUY'
+    100
+);
+```
+
+### 電子發票 串接
+
+#### 快速上手
+開立發票
+```
+// 產生智付通開立發票資料
+$receipt = Receipt::generate([
+    'BuyerName'       => 'Leo',
+    'TotalAmt'        => 10,
+    'ItemName'        => [1],
+    'ItemCount'       => [1],
+    'ItemUnit'        => ['式'],
+    'ItemPrice'       => [10],
+]);
+
+// $receipt的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+
+// 送出開立發票申請，取得發票開立回傳結果
+$res = $receipt->send();
+```
+
+觸發開立發票
+```
+// 產生智付通出發開立發票資料
+$receipt = Receipt::generateTrigger('17122817285242624', '20171121WJNBX5NNBP', 100);
+
+// $receipt的 triggerPostData 及 triggerPostDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+
+// 送出觸發開立發票申請，取得發票觸發開立回傳結果
+$res = $receipt->send();
+```
+
+作廢發票
+```
+// 產生智付通作廢發票資料
+$receipt = Receipt::generateInvalid('YF83646422', '作廢原因');
+
+// $receipt的 invalidPostData 及 invalidPostDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+
+// 送出作廢發票申請，取得作廢發票回傳結果
+$res = $receipt->sendInvalid();
+```
+
+查詢發票
+```
+// 查詢發票資料
+$receipt = Receipt::search('20171121WJNBX5NNBP', 100);
+```
+#### 可用方法
+
+> #### generate ($params)
+
+產生智付通開立電子發票必要資訊
+
+##### 參數
+
+1. `params (Array)`: 參數，詳見[可選參數](#可選參數)
+
+##### 回傳
+
+1. `(Class)`: Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料
+
+##### 使用範例
+```
+$receipt = Receipt::generate([
+    'BuyerName'       => 'Leo',
+    'TotalAmt'        => 10,
+    'ItemName'        => [1],
+    'ItemCount'       => [1],
+    'ItemUnit'        => ['式'],
+    'ItemPrice'       => [10],
 ]);
 ```
 
-2. 前台送出表單到智付通
+##### 可選參數
+
+| 欄位             | 必填  |      型態      |          可選值        |  預設 | 備註                                |
+|------------------|:----:|:--------------:|:---------------------:|:-----:|------------------------------------|
+| TransNum         |      |     String     |                       |       | 智付寶平台交易序號                  |
+| MerchantOrderNo  |      |     String     |                       |       | 商店自訂編號，若無填寫則由套件產生    |
+| Status           |      |     Number     |    `0` / `1` / `3`    |   1   | 開立發票方式                        |
+| CreateStatusTime |      | String (Y-m-d) |                       |       | 範例：2017-12-31                   |
+| Category         |      |     String     |     `B2B` / `B2C`     | `B2C` |                                    |
+| BuyerName        |   ✔  |     String     |                       |       |                                    |
+| BuyerUBN         |      |     String     |                       |       |                                    |
+| BuyerAddress     |      |     String     |                       |       |                                    |
+| BuyerEmail       |      |      Email     |                       |       |                                    |
+| CarrierType      |      |     String     |       `0` / `1`       |   1   |                                    |
+| CarrierNum       |      |     String     |       `0` / `1`       |   0   |                                    |
+| LoveCode         |      |     Number     |                       |       |                                    |
+| PrintFlag        |      |     String     |       `Y` / `N`       |  `Y`  |                                    |
+| TaxType          |      |     String     | `1` / `2` / `3` / `9` |  `1`  |                                    |
+| TaxRate          |      |     Number     |                       |  `5`  |                                    |
+| CustomsClearance |      |     Number     |       `1` / `2`       |       |                                    |
+| Amt              |      |     Number     |                       |       | 若無填寫則由套件計算                 |
+| AmtSales         |      |     Number     |                       |       |                                    |
+| AmtZero          |      |     Number     |                       |       |                                    |
+| AmtFree          |      |     Number     |                       |       |                                    |
+| TaxAmt           |      |     Number     |                       |       | 若無填寫則由套件計算                 |
+| TotalAmt         |   ✔  |     Number     |                       |       |                                    |
+| ItemName         |   ✔  |      Array     |                       |       |                                    |
+| ItemCount        |   ✔  |      Array     |                       |       |                                    |
+| ItemUnit         |   ✔  |      Array     |                       |       |                                    |
+| ItemPrice        |   ✔  |      Array     |                       |       |                                    |
+| ItemTaxType      |      |      Array     |                       |       |                                    |
+| ItemAmt          |      |      Array     |                       |       | 若無填寫則由套件計算                 |
+| Comment          |      |     String     |                       |       |                                    |
+
+##### 備註
+* 本套件僅提供快速串接方式，詳細稅額計算方式請務必與公司財會人員進行確認
+
+> #### send()
+
+傳送開立發票請求到智付通
+
+##### 回傳
+詳見[智付通文件](https://inv.pay2go.com/dw_files/info_api/pay2go_gateway_electronic_invoice_api_V1_1_7.pdf)第四節之二：開立發票系統回應訊息
 ```
-return $mpg->sendOrder($order);
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
 ```
 
-#### 參數表
+##### 使用範例
+```
+$res = $receipt->send();
+```
 
-| 欄位            | 必填 |     型態     |       可選值      |   預設  | 備註 |
-|-----------------|:----:|:------------:|:-----------------:|:-------:|------|
-| MerchantOrderNo |   ✔  |    String    |                   |         |   商店自訂編號   |
-| Amt             |   ✔  |    Number    |                   |         |      |
-| ItemDesc        |   ✔  |    String    |                   |         |   商品描述   |
-| Email           |   ✔  |     Email    |                   |         |      |
-| RespondType     |      |    String    | `JSON` / `String` |  `JSON` |      |
-| LangType        |      |    String    |   `zh-tw` / `en`  | `zh-tw` |      |
-| TradeLimit      |      |    Number    |      60 ~ 900     |   180   |      |
-| ExpireDate      |      | String (Ymd) |                   |         |      |
-| ExpireTime      |      | String (His) |                   |         |      |
-| ReturnURL       |      |      Url     |                   |         |      |
-| NotifyURL       |      |      Url     |                   |         |      |
-| CustomerURL     |      |      Url     |                   |         |      |
-| ClientBackURL   |      |      Url     |                   |         |      |
-| EmailModify     |      |    Number    |     `0` / `1`     |    1    |      |
-| LoginType       |      |    Number    |     `0` / `1`     |    0    |      |
-| OrderComment    |      |    String    |                   |         |      |
-| TokenTerm       |      |    String    |                   |         |   信用卡快速結帳   |
-| CREDIT          |      |    Number    |     `0` / `1`     |         |   信用卡一次付清   |
-| CreditRed       |      |    Number    |     `0` / `1`     |         |   信用卡紅利   |
-| InstFlag        |      |    Number    |     `0` / `1`     |         |   信用卡分期付款   |
-| UNIONPAY        |      |    Number    |     `0` / `1`     |         |   銀聯卡   |
-| WEBATM          |      |    Number    |     `0` / `1`     |         |   WebATM   |
-| VACC            |      |    Number    |     `0` / `1`     |         |   ATM轉帳   |
-| CVS             |      |    Number    |     `0` / `1`     |         |   超商代碼繳費   |
-| BARCODE         |      |    Number    |     `0` / `1`     |         |   條碼繳費，訂單金額需介於20～20000   |
+> #### generateTrigger ($invoiceTransNo, $orderNo, $amount)
 
-#### 備註
-* 支付方式至少必須選擇一種，若皆無選擇預設為啟用信用卡
+產生智付通觸發開立電子發票必要資訊
+
+##### 參數
+
+1. `invoiceTransNo (String)`: 智付寶開立序號
+2. `orderNo (String)`: 商店自訂編號
+3. `amount (Integer)`: 發票金額
+
+##### 回傳
+
+1. `(Class)`: Class實體，其中triggerPostData 及 triggerPostDataEncrypted包含即將送到智付通的表單資料
+
+##### 使用範例
+```
+$receipt = Receipt::generateTrigger('17122817285242624', '20171121WJNBX5NNBP', 100);
+```
+
+> #### sendTrigger()
+
+送出觸發開立電子發票請求到智付通
+
+##### 回傳
+詳見[智付通文件](https://inv.pay2go.com/dw_files/info_api/pay2go_gateway_electronic_invoice_api_V1_1_7.pdf)第四節之四：觸發開立發票系統回應訊息
+```
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
+```
+
+##### 使用範例
+```
+$res = $receipt->sendTrigger();
+```
+
+> #### generateInvalid ($receiptNumber, $invalidReason)
+
+產生智付通觸發開立電子發票必要資訊
+
+##### 參數
+
+1. `receiptNumber (String)`: 發票號碼
+2. `receiptNumber (String)`: 作廢原因
+
+##### 回傳
+
+1. `(Class)`: Class實體，其中invalidPostData 及 invalidPostDataEncrypted包含即將送到智付通的表單資料
+
+##### 使用範例
+```
+$receipt = Receipt::generateInvalid('17122817285242624', '作廢原因');
+```
+
+> #### sendInvalid()
+
+送出觸發開立電子發票請求到智付通
+
+##### 回傳
+詳見[智付通文件](https://inv.pay2go.com/dw_files/info_api/pay2go_gateway_electronic_invoice_api_V1_1_7.pdf)第五節之二：作廢發票系統回應訊息
+```
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
+```
+
+> #### search($orderNo, $amount)
+
+查詢發票
+
+##### 參數
+
+1. `orderNo (String)`: 商店自訂編號
+2. `amount (Integer)`: 發票金額
+
+##### 回傳
+詳見[智付通文件](https://inv.pay2go.com/dw_files/info_api/pay2go_gateway_electronic_invoice_api_V1_1_7.pdf)第五節之二：作廢發票系統回應訊息
+```
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
+```
+
+##### 使用範例
+```
+$res = $receipt->sendInvalid();
+```
+
+### 信用卡退款 / 取消授權 串接
+
+#### 快速上手
+```
+// 產生智付通退費 / 取消授權必要資訊
+$refund = Refund::generate('20171121WJNBX5NNBP', 100);
+
+// $refund的 postType為cacnel時，訂單準備取消授權；為refund時，訂單準備退款
+// $refund的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+
+// 送出退款/取消授權申請，取得回傳結果
+$res = $refund->send();
+```
+#### 可用方法
+
+> #### generate ($orderNo, $amount\[, $notifyUrl\])
+
+產生智付通退費 / 取消授權必要欄位
+
+##### 參數
+
+1. `orderNo (String)`: 商店自訂編號
+2. `amount (String)`: 商店自訂編號
+3. `[ notifyUrl (String) ]`: 接受取消授權結果位址
+
+##### 回傳
+
+1. `(Class)`: Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料；postType為cacnel時，訂單準備取消授權，為refund時，訂單準備退款
+
+##### 使用範例
+```
+$refund = Refund::generate('20171121WJNBX5NNBP', 100);
+```
+
+> #### send()
+
+傳送退費 / 取消授權請求到智付通
+
+##### 回傳
+取消授權：詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/gateway_creditcard_deauthorize_api_V1_0_0.pdf)第五節：取消授權完成後系統回應訊息
+退款：詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/2.pdf)第五節：系統回應訊息
+```
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
+```
+
+##### 使用範例
+```
+$res = $refund->send();
+```
+
+### 平台費用扣款指示 串接
+
+#### 快速上手
+```
+// 產生平台費用扣款指示必要資訊
+$transfer = Transfer::generate('20171121WJNBX5NNBP', 100, 0, 0);
+
+// $transfer的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+
+// 送出扣款指示申請，取得扣款指示回傳結果
+$res = $transfer->send();
+```
+#### 可用方法
+
+> #### generate ($merchantID, $amount, $feeType, $balanceType)
+
+產生智付通退費 / 取消授權必要欄位
+
+##### 參數
+
+1. `orderNo (String)`: 商店自訂編號
+2. `amount (String)`: 金額
+3. `feeType (Integer)`: 費用類別
+4. `balanceType (Integer)`: 交易正負值
+
+##### 回傳
+
+1. `(Class)`: Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料
+
+##### 使用範例
+```
+$transfer = Transfer::generate('20171121WJNBX5NNBP', 100);
+```
+
+> #### send()
+
+傳送退費 / 取消授權請求到智付通
+
+##### 回傳
+本文件未公開，請向合作之智付通業務人員索取
+```
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
+```
+
+##### 使用範例
+```
+$res = $transfer->send();
+```
 
 ## License
 
