@@ -1,21 +1,19 @@
 <?php
-/**
- * 用來管理智付通發票系統
- *
- * User: Chu
- * Date: 2017/12/26
- * Time: 下午6:49
- */
 
 namespace LeoChien\Spgateway;
 
-use GuzzleHttp\Client;
+use LeoChien\Spgateway\Libraries\Helpers;
 
 class Receipt
 {
     private $apiUrl;
-    private $client;
-    private $encryptLibrary;
+    private $helpers;
+    private $postData;
+    private $postDataEncrypted;
+    private $triggerPostData;
+    private $triggerPostDataEncrypted;
+    private $invalidPostData;
+    private $invalidPostDataEncrypted;
 
     public function __construct()
     {
@@ -24,51 +22,33 @@ class Receipt
                 = 'https://inv.pay2go.com/API/invoice_issue';
             $this->apiUrl['INVALID_RECEIPT_API']
                 = 'https://inv.pay2go.com/API/invoice_invalid';
+            $this->apiUrl['TRIGGER_RECEIPT_API']
+                = 'https://inv.pay2go.com/API/invoice_touch_issue';
+            $this->apiUrl['SEARCH_RECEIPT_API']
+                = 'https://inv.pay2go.com/API/invoice_search';
         } else {
             $this->apiUrl['CREATE_RECEIPT_API']
                 = 'https://cinv.pay2go.com/API/invoice_issue';
             $this->apiUrl['INVALID_RECEIPT_API']
                 = 'https://cinv.pay2go.com/API/invoice_invalid';
+            $this->apiUrl['TRIGGER_RECEIPT_API']
+                = 'https://cinv.pay2go.com/API/invoice_touch_issue';
+            $this->apiUrl['SEARCH_RECEIPT_API']
+                = 'https://cinv.pay2go.com/API/invoice_search';
         }
 
-        $this->client = new Client();
-        $this->encryptLibrary = new EncryptLibrary();
-    }
-
-    public function createReceipt(
-        $param
-    ) {
-        // 產生送至智付通的資料
-        $spgatewayPostData
-            = $this->generateReceiptData($param);
-
-        /* 呼叫智付通電子發票API */
-        $res = $this->client->request(
-            'POST',
-            $this->apiUrl['CREATE_RECEIPT_API'],
-            ['form_params' => $spgatewayPostData,]
-        )->getBody()->getContents();
-
-        $result = json_decode($res);
-
-        if ($result->Status === 'SUCCESS') {
-            $result->Result = json_decode($result->Result);
-        }
-
-        return $result;
+        $this->helpers = new Helpers();
     }
 
     /**
      * 產生智付通開立電子發票必要資訊
      *
      * @param array $params
-     * @param bool  $encrypt
      *
-     * @return array
+     * @return $this|array
      */
-    public function generateReceiptData(
-        array $params,
-        $encrypt = true
+    public function generate(
+        array $params
     ) {
         $params['TaxRate'] = $params['TaxRate'] ?? 5;
         $params['Category'] = $params['Category'] ?? 'B2C';
@@ -90,24 +70,33 @@ class Receipt
         $params['ItemPrice'] = implode('|', $params['ItemPrice']);
         $params['ItemAmt'] = implode('|', $itemAmt);
 
-
         // 智付通開立電子發票必要資訊
         $postData = [
             'RespondType'      => $params['RespondType'] ?? 'JSON',
-            'Version'          => '1.3',
+            'Version'          => '1.4',
             'TimeStamp'        => time(),
-            'MerchantOrderNo'  => $params['MerchantOrderNo'],
+            'TransNum'         => $params['TransNum'] ?? null,
+            'MerchantOrderNo'  => $params['MerchantOrderNo'] ??
+                $this->helpers->generateOrderNo(),
             'Status'           => $params['Status'] ?? '1',
             'CreateStatusTime' => $params['CreateStatusTime'] ?? null,
             'Category'         => $params['Category'] ?? 'B2C',
             'BuyerName'        => $params['BuyerName'],
             'BuyerUBN'         => $params['BuyerUBN'] ?? null,
+            'BuyerAddress'     => $params['BuyerAddress'] ?? null,
             'BuyerEmail'       => $params['BuyerEmail'],
+            'CarrierType'      => $params['CarrierType'] ?? null,
+            'CarrierNum'       => $params['CarrierNum'] ?? null,
+            'LoveCode'         => $params['LoveCode'] ?? null,
             'PrintFlag'        => $params['PrintFlag'] ?? 'Y',
             'TaxType'          => $params['TaxType'] ?? '1',
             'TaxRate'          => $params['TaxRate'] ?? 5,
+            'CustomsClearance' => $params['CustomsClearance'] ?? null,
             'Amt'              => $this->priceBeforeTax($params['TotalAmt'],
                 $params['TaxRate']),
+            'AmtSales'         => $params['AmtSales'] ?? null,
+            'AmtZero'          => $params['AmtZero'] ?? null,
+            'AmtFree'          => $params['AmtFree'] ?? null,
             'TaxAmt'           => $this->calcTax($params['TotalAmt'],
                 $params['TaxRate']),
             'TotalAmt'         => $params['TotalAmt'],
@@ -120,26 +109,50 @@ class Receipt
             'Comment'          => $params['Comment'] ?? null
         ];
 
-        if($encrypt){
-            return $this->encryptReceiptData($postData);
-        } else {
-            return $postData;
-        }
-    }
-
-    public function encryptReceiptData($postData)
-    {
-        $postData = array_filter($postData, function ($value) {
+        $this->postData = array_filter($postData, function ($value) {
             return ($value !== null && $value !== false && $value !== '');
         });
 
-        // 加密
-        $postDataEncrypted = $this->encryptLibrary->encryptPostData($postData);
+        return $this->encrypt();
+    }
 
-        return [
+    /**
+     * 加密開立發票資料
+     *
+     * @return $this
+     */
+    private function encrypt()
+    {
+        $postDataEncrypted
+            = $this->helpers->encryptPostData($this->postData);
+
+        $this->postDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
             'PostData_'   => $postDataEncrypted,
         ];
+
+        return $this;
+    }
+
+    /**
+     * 傳送開立發票請求到智付通
+     *
+     * @return mixed
+     */
+    public function send()
+    {
+        $res = $this->helpers->sendPostRequest(
+            $this->apiUrl['CREATE_RECEIPT_API'],
+            $this->postDataEncrypted
+        );
+
+        $result = json_decode($res);
+
+        if ($result->Status === 'SUCCESS') {
+            $result->Result = json_decode($result->Result);
+        }
+
+        return $result;
     }
 
     public function calcTax($price, $tax)
@@ -154,24 +167,69 @@ class Receipt
     }
 
     /**
-     * 呼叫智付通電子發票API作廢電子發票
+     * 產生智付通觸發開立電子發票必要資訊
      *
-     * @param $params
+     * @param      $invoiceTransNo
+     * @param      $orderNo
+     * @param      $amount
+     * @param null $transNum
+     *
+     * @return $this
+     */
+    public function generateTrigger(
+        $invoiceTransNo,
+        $orderNo,
+        $amount,
+        $transNum = null
+    ) {
+        // 智付通作廢電子發票必要資訊
+        $triggerPostData = [
+            'RespondType'     => 'JSON',
+            'Version'         => '1.0',
+            'TimeStamp'       => time(),
+            'TransNum'        => $transNum,
+            'InvoiceTransNo'  => $invoiceTransNo,
+            'MerchantOrderNo' => $orderNo,
+            'TotalAmt'        => $amount,
+        ];
+
+        $this->triggerPostData = array_filter($triggerPostData,
+            function ($value) {
+                return ($value !== null && $value !== false && $value !== '');
+            });
+
+        return $this->encryptTrigger();
+    }
+
+    /**
+     * 加密觸發開立發票資料
+     *
+     * @return $this
+     */
+    private function encryptTrigger()
+    {
+        $postDataEncrypted
+            = $this->helpers->encryptPostData($this->triggerPostData);
+
+        $this->triggerPostDataEncrypted = [
+            'MerchantID_' => config('spgateway.receipt.MerchantID'),
+            'PostData_'   => $postDataEncrypted,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * 送出觸發開立電子發票請求到智付通
      *
      * @return bool
      */
-    public function invalidReceipt($params)
+    public function sendTrigger()
     {
-        // 產生送至智付通的資料
-        $spgatewayPostData
-            = $this->generateInvalidReceiptData($params);
-
-        /* 呼叫智付通電子發票API */
-        $res = $this->client->request(
-            'POST',
-            $this->apiUrl['INVALID_RECEIPT_API'],
-            ['form_params' => $spgatewayPostData,]
-        )->getBody()->getContents();
+        $res = $this->helpers->sendPostRequest(
+            $this->apiUrl['TRIGGER_RECEIPT_API'],
+            $this->triggerPostDataEncrypted
+        );
 
         $result = json_decode($res);
 
@@ -185,28 +243,102 @@ class Receipt
     /**
      * 產生智付通作廢電子發票必要資訊
      *
-     * @param $params
+     * @param $receiptNumber
+     * @param $invalidReason
      *
-     * @return array
+     * @return $this|array
      */
-    public function generateInvalidReceiptData(
-        $params
+    public function generateInvalid(
+        $receiptNumber,
+        $invalidReason
     ) {
         // 智付通作廢電子發票必要資訊
-        $postData = [
+        $this->invalidPostData = [
             'RespondType'   => 'JSON',
             'Version'       => '1.0',
             'TimeStamp'     => time(),
-            'InvoiceNumber' => $params['InvoiceNumber'],
-            'InvalidReason' => $params['InvalidReason'],
+            'InvoiceNumber' => $receiptNumber,
+            'InvalidReason' => $invalidReason,
         ];
 
-        // 加密
-        $postDataEncrypted = $this->encryptPostData($postData);
+        return $this->encryptInvalid();
+    }
 
-        return [
+    /**
+     * 加密作廢發票資料
+     *
+     * @return $this
+     */
+    private function encryptInvalid()
+    {
+        $postDataEncrypted
+            = $this->helpers->encryptPostData($this->invalidPostData);
+
+        $this->invalidPostDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
             'PostData_'   => $postDataEncrypted,
         ];
+
+        return $this;
+    }
+
+
+    /**
+     * 送出作廢電子發票請求到智付通
+     *
+     * @return bool
+     */
+    public function sendInvalid()
+    {
+        $res = $this->helpers->sendPostRequest(
+            $this->apiUrl['INVALID_RECEIPT_API'],
+            $this->invalidPostDataEncrypted
+        );
+
+        $result = json_decode($res);
+
+        if ($result->Status === 'SUCCESS') {
+            $result->Result = json_decode($result->Result);
+        }
+
+        return $result;
+    }
+
+    /**
+     * 查詢發票
+     *
+     * @param $orderNo
+     * @param $amount
+     *
+     * @return bool
+     */
+    public function search($orderNo, $amount)
+    {
+        $postData = [
+            'RespondType'     => 'JSON',
+            'Version'         => '1.1',
+            'TimeStamp'       => time(),
+            'SearchType'      => 1,
+            'MerchantOrderNo' => $orderNo,
+            'TotalAmt'        => $amount,
+        ];
+
+        $postDataEncrypted = [
+            'MerchantID_' => config('spgateway.receipt.MerchantID'),
+            'PostData_'   => $this->helpers->encryptPostData($postData)
+        ];
+
+        $res = $this->helpers->sendPostRequest(
+            $this->apiUrl['SEARCH_RECEIPT_API'],
+            $postDataEncrypted
+        );
+
+        $result = json_decode($res);
+
+        if ($result->Status === 'SUCCESS') {
+            $result->Result = json_decode($result->Result);
+        }
+
+        return $result;
     }
 }

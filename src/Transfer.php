@@ -1,78 +1,93 @@
 <?php
-/**
- * 用來做合作金流推廣商請/退款
- *
- * User: Chu
- * Date: 2018/1/8
- * Time: 下午7:26
- */
 
 namespace LeoChien\Spgateway;
 
-
-use GuzzleHttp\Client;
+use LeoChien\Spgateway\Libraries\Helpers;
 
 class Transfer
 {
     private $apiUrl;
-    private $client;
-    private $encryptLibrary;
+    private $helpers;
+    private $postData;
+    private $postDataEncrypted;
 
     public function __construct()
     {
         if (env('APP_ENV') === 'production') {
-            $this->apiUrl['CREATE_RECEIPT_API']
+            $this->apiUrl['CHARGE_INSTRUCT_API']
                 = 'https://core.spgateway.com/API/ChargeInstruct';
         } else {
-            $this->apiUrl['CREATE_RECEIPT_API']
+            $this->apiUrl['CHARGE_INSTRUCT_API']
                 = 'https://ccore.spgateway.com/API/ChargeInstruct';
         }
 
-        $this->client = new Client();
-        $this->encryptLibrary = new EncryptLibrary();
+        $this->helpers = new Helpers();
     }
 
     /**
-     * 產生智付通開立電子發票必要資訊
+     * 產生平台扣款指示必要欄位
      *
-     * @param array $params
-     * @param bool  $encrypt
+     * @param      $merchantID
+     * @param      $amount
+     * @param      $feeType
+     * @param      $balanceType
      *
-     * @return array
+     * @return $this|Transfer
      */
-    public function generateTransferData(
-        array $params,
-        $encrypt = true
+    public function generate(
+        $merchantID,
+        $amount,
+        $feeType,
+        $balanceType
     ) {
-        // 智付通開立電子發票必要資訊
-        $postData = [
+        // 智付通平台費用扣款必要資訊
+        $this->postData = [
             'Version'     => '1.0',
             'TimeStamp'   => time(),
-            'MerchantID'  => $params['MerchantID'],
-            'Amt'         => $params['Amt'],
-            'FeeType'     => $params['FeeType'],
-            'BalanceType' => $params['BalanceType'],
+            'MerchantID'  => $merchantID,
+            'Amount'      => $amount,
+            'FeeType'     => $feeType,
+            'BalanceType' => $balanceType,
         ];
 
-        if ($encrypt) {
-            return $this->encryptReceiptData($postData);
-        } else {
-            return $postData;
-        }
+        return $this->encrypt();
     }
 
-    public function encryptReceiptData($postData)
+    /**
+     * 加密資料
+     *
+     * @return $this
+     */
+    public function encrypt()
     {
-        $postData = array_filter($postData, function ($value) {
-            return ($value !== null && $value !== false && $value !== '');
-        });
+        $postData_ = $this->helpers->encryptPostData($this->postData);
 
-        // 加密
-        $postDataEncrypted = $this->encryptLibrary->encryptPostData($postData);
-
-        return [
-            'MerchantID_' => config('spgateway.receipt.MerchantID'),
-            'PostData_'   => $postDataEncrypted,
+        $this->postDataEncrypted = [
+            'PartnerID_' => config('spgateway.PartnerID'),
+            'PostData_'  => $postData_,
         ];
+
+        return $this;
+    }
+
+    /**
+     * 傳送扣款指示要求到智付通
+     *
+     * @return mixed
+     */
+    public function send()
+    {
+        $res = $this->helpers->sendPostRequest(
+            $this->apiUrl['CREATE_RECEIPT_API'],
+            $this->postDataEncrypted
+        );
+
+        $result = json_decode($res);
+
+        if ($result->Status === 'SUCCESS') {
+            $result->Result = json_decode($result->Result);
+        }
+
+        return $result;
     }
 }

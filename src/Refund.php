@@ -1,22 +1,16 @@
 <?php
-/**
- * 用來退款
- *
- * User: Chu
- * Date: 2017/12/27
- * Time: 上午11:35
- */
 
 namespace LeoChien\Spgateway;
 
-
-use GuzzleHttp\Client;
+use LeoChien\Spgateway\Libraries\Helpers;
 
 class Refund
 {
     private $apiUrl;
-    private $client;
-    private $encryptLibrary;
+    private $helpers;
+    private $postData;
+    private $postType;
+    private $postDataEncrypted;
 
     public function __construct()
     {
@@ -33,69 +27,87 @@ class Refund
                 = 'https://ccore.spgateway.com/API/CreditCard/Close';
         }
 
-        $this->client = new Client();
-        $this->encryptLibrary = new EncryptLibrary();
+        $this->helpers = new Helpers();
     }
 
     /**
-     * 智付通退費
+     * 產生智付通退費 / 取消授權必要資料
      *
-     * @param $MerchantOrderNo
-     * @param $Amt
-     * @param $notifyUrl
+     * @param      $orderNo
+     * @param      $amount
+     * @param null $notifyUrl
      *
-     * @return bool|mixed|string
+     * @return Refund|object
      */
-    public function refund($MerchantOrderNo, $Amt, $notifyUrl = null)
+    public function generate($orderNo, $amount, $notifyUrl = null)
     {
         $mpg = new MPG();
-        $tradeInfo = $mpg->searchOrder([
-            'MerchantOrderNo' => $MerchantOrderNo,
-            'Amt'             => $Amt,
-        ]);
+        $tradeInfo = $mpg->search($orderNo, $amount);
         $tradeInfo = $tradeInfo->Result;
 
-        // 訂單取消授權
         if ($tradeInfo->TradeStatus === "1"
             && $tradeInfo->CloseStatus === "0"
         ) {
-            $creditCancelData
-                = $this->generateCreditCancelPostData($MerchantOrderNo, $Amt,
-                $notifyUrl);
+            $this->postData = $this->generateCreditCancel(
+                $orderNo,
+                $amount,
+                $notifyUrl
+            );
 
-            $res = $this->client->request('POST',
-                $this->apiUrl['CREDIT_CARD_CANCEL_API'], [
-                    'form_params' => $creditCancelData,
-                    'verify'      => false
-                ])->getBody()->getContents();
+            $this->postType = 'cancel';
+        } elseif ($tradeInfo->TradeStatus === "1"
+            && $tradeInfo->CloseStatus === "3"
+        ) {
+            $this->postData = $this->generateCreditRefund(
+                $orderNo,
+                $amount
+            );
 
-            $res = json_decode($res);
-
-            /* 回傳結果 */
-            return $res;
+            $this->postType = 'refund';
         } else {
-            if ($tradeInfo->TradeStatus === "1"
-                && $tradeInfo->CloseStatus === "3"
-            ) {
-                $refundData
-                    = $this->generateCreditClosePostData($MerchantOrderNo, $Amt);
-
-                $res = $this->client->request('POST',
-                    $this->apiUrl['REFUND_API'], [
-                        'form_params' => $refundData,
-                        'verify'      => false
-                    ])->getBody()->getContents();
-
-                $res = json_decode($res);
-
-                /* 回傳結果 */
-                return $res;
-            } else {
-                return (Object)[
-                    'Status' => false,
-                ];
-            }
+            return (Object)[
+                'Status' => false,
+            ];
         }
+
+        return $this->encrypt();
+    }
+
+    /**
+     * 加密資料
+     *
+     * @return $this
+     */
+    private function encrypt()
+    {
+        $PostData_ = $this->helpers->encryptPostData($this->postData);
+
+        $this->postDataEncrypted = [
+            'MerchantID_' => env('SPGATEWAY_MERCHANT_ID'),
+            'PostData_'   => $PostData_,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * 傳送退款 / 取消授權請求到智付通
+     *
+     * @return mixed|string
+     */
+    public function send()
+    {
+        if($this->postType === 'cancel'){
+            $url = $this->apiUrl['CREDIT_CARD_CANCEL_API'];
+        } else {
+            $url = $this->apiUrl['REFUND_API'];
+        }
+
+        $res = $this->helpers->sendPostRequest($url, $this->postDataEncrypted);
+
+        $res = json_decode($res);
+
+        return $res;
     }
 
     /**
@@ -107,7 +119,7 @@ class Refund
      *
      * @return array
      */
-    public function generateCreditCancelPostData(
+    private function generateCreditCancel(
         $MerchantOrderNo,
         $Amt,
         $notifyUrl
@@ -122,39 +134,29 @@ class Refund
             'NotifyURL'       => $notifyUrl,
         ];
 
-        $PostData_ = $this->encryptPostData($postData);
-
-        return [
-            'MerchantID_' => env('SPGATEWAY_MERCHANT_ID'),
-            'PostData_'   => $PostData_,
-        ];
+        return $postData;
     }
 
     /**
      * 產生退費必要資料
      *
-     * @param $MerchantOrderNo
-     * @param $Amt
+     * @param $orderNo
+     * @param $amount
      *
      * @return array
      */
-    public function generateCreditClosePostData($MerchantOrderNo, $Amt)
+    private function generateCreditRefund($orderNo, $amount)
     {
         $postData = [
             'RespondType'     => 'JSON',
             'Version'         => '1.0',
-            'Amt'             => $MerchantOrderNo,
-            'MerchantOrderNo' => $Amt,
+            'Amt'             => $orderNo,
+            'MerchantOrderNo' => $amount,
             'IndexType'       => 1,
             'TimeStamp'       => time(),
             'CloseType'       => 2,
         ];
 
-        $PostData_ = $this->encryptLibrary->encryptPostData($postData);
-
-        return [
-            'MerchantID_' => env('SPGATEWAY_MERCHANT_ID'),
-            'PostData_'   => $PostData_,
-        ];
+        return $postData;
     }
 }
