@@ -27,7 +27,10 @@ $ composer require "leochien/spgateway"
 ],
 'aliases' => [
     // ...
-    'Spgateway' => LeoChien\Spgateway\SpgatewayFacade::class,
+    'MPG' => LeoChien\Spgateway\Facades\MPG::class,
+    'Receipt' => LeoChien\Spgateway\Facades\Receipt::class,
+    'Refund' => LeoChien\Spgateway\Facades\Refund::class,
+    'Transfer' => LeoChien\Spgateway\Facades\Transfer::class,
 ],
 ```
 
@@ -64,6 +67,7 @@ SPGATEWAY_RECEIPT_MERCHANT_ID=
 ### 多功能收款 MPG 串接
 
 #### 快速上手
+建立訂單
 ```
 // 產生智付通訂單資料
 $order = MPG::generate(
@@ -78,9 +82,22 @@ $order = MPG::generate(
 return $order->send();
 ```
 
+解析智付通回傳訂單資料
+```
+$tradeInfo = MPG::parse(request()->TradeInfo);
+```
+
+查詢訂單
+```
+$order = MPG::search(
+    '20180110151950mTHuUY'
+    100
+);
+```
+
 #### 可用方法
 
-> #### generate ($amount, $email, $itemDesc \[, $params \])
+> ### generate ($amount, $email, $itemDesc \[, $params \])
 
 產生智付通建立訂單必要欄位
 
@@ -134,7 +151,7 @@ $order = MPG::generate(
 * 支付方式若無選擇，默認開啟智付通後台設定方式
 * 若無傳送訂單編號預設會建立年月日時分秒+6位隨機字串的訂單編號，e.g. 20180110151950mTHuUY
 
-> #### send ()
+> ### send ()
 
 前台送出智付通訂單建立表單
 
@@ -143,7 +160,7 @@ $order = MPG::generate(
 $order->send();
 ```
 
-> #### parse ($tradeInfo)
+> ### parse ($tradeInfo)
 
 解析智付通交易結果回傳參數
 
@@ -176,11 +193,11 @@ $tradeInfo = MPG::parse(request()->TradeInfo);
 2. `amount (Integer)`: 訂單金額
 
 ##### 回傳
-
+詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/4.pdf)第四章：交易查詢系統回應訊息
 ```
 {
     "Status": "..."
-    "Message": "查詢成功"
+    "Message": "..."
     "Result": {...}
 }
 ```
@@ -246,7 +263,7 @@ $receipt = Receipt::search('20171121WJNBX5NNBP', 100);
 
 > #### generate ($params)
 
-產生智付通開立電子發票必要資訊
+產生智付通開立電子發票必要欄位
 
 ##### 參數
 
@@ -394,6 +411,11 @@ $receipt = Receipt::generateInvalid('17122817285242624', '作廢原因');
 }
 ```
 
+##### 使用範例
+```
+$res = $receipt->sendInvalid();
+```
+
 > #### search($orderNo, $amount)
 
 查詢發票
@@ -404,7 +426,7 @@ $receipt = Receipt::generateInvalid('17122817285242624', '作廢原因');
 2. `amount (Integer)`: 發票金額
 
 ##### 回傳
-詳見[智付通文件](https://inv.pay2go.com/dw_files/info_api/pay2go_gateway_electronic_invoice_api_V1_1_7.pdf)第五節之二：作廢發票系統回應訊息
+詳見[智付通文件](https://inv.pay2go.com/dw_files/info_api/pay2go_gateway_electronic_invoice_api_V1_1_7.pdf)第七節之二：查詢發票系統回應訊息
 ```
 {
     "Status": "..."
@@ -415,12 +437,14 @@ $receipt = Receipt::generateInvalid('17122817285242624', '作廢原因');
 
 ##### 使用範例
 ```
-$res = $receipt->sendInvalid();
+$res = $receipt->search('20171121WJNBX5NNBP', 100);
 ```
 
 ### 信用卡退款 / 取消授權 串接
+因智付通信用卡退費有尚未請款需串接取消授權API，已請款需串接退款API之規則，本功能旨在整合此一過程，降低開發人員負擔
 
 #### 快速上手
+
 ```
 // 產生智付通退費 / 取消授權必要資訊
 $refund = Refund::generate('20171121WJNBX5NNBP', 100);
@@ -431,6 +455,7 @@ $refund = Refund::generate('20171121WJNBX5NNBP', 100);
 // 送出退款/取消授權申請，取得回傳結果
 $res = $refund->send();
 ```
+
 #### 可用方法
 
 > #### generate ($orderNo, $amount\[, $notifyUrl\])
@@ -441,7 +466,7 @@ $res = $refund->send();
 
 1. `orderNo (String)`: 商店自訂編號
 2. `amount (String)`: 商店自訂編號
-3. `[ notifyUrl (String) ]`: 接受取消授權結果位址
+3. `[ notifyUrl (String) ]`: 接受取消授權結果位址，於取消授權時才需填寫
 
 ##### 回傳
 
@@ -458,6 +483,7 @@ $refund = Refund::generate('20171121WJNBX5NNBP', 100);
 
 ##### 回傳
 取消授權：詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/gateway_creditcard_deauthorize_api_V1_0_0.pdf)第五節：取消授權完成後系統回應訊息
+
 退款：詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/2.pdf)第五節：系統回應訊息
 ```
 {
@@ -488,7 +514,7 @@ $res = $transfer->send();
 
 > #### generate ($merchantID, $amount, $feeType, $balanceType)
 
-產生智付通退費 / 取消授權必要欄位
+產生智付通扣款指示必要欄位
 
 ##### 參數
 
@@ -508,7 +534,7 @@ $transfer = Transfer::generate('20171121WJNBX5NNBP', 100);
 
 > #### send()
 
-傳送退費 / 取消授權請求到智付通
+傳送扣款指示請求到智付通
 
 ##### 回傳
 本文件未公開，請向合作之智付通業務人員索取
@@ -527,5 +553,5 @@ $res = $transfer->send();
 
 ## License
 
-This project is licensed under the MIT License
+Laravel Spgateway is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT)
 
