@@ -11,7 +11,7 @@ Laravel Spgateway是一個開源的 [智付通](https://www.spgateway.com/) 非�
 ## 安裝
 
 ```
-$ composer require "leochien/spgateway"
+$ composer require leochien/laravel-spgateway
 ```
 
 ## 配置
