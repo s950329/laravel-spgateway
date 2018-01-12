@@ -18,13 +18,17 @@ class Refund
         if (env('APP_ENV') === 'production') {
             $this->apiUrl['CREDIT_CARD_CANCEL_API']
                 = 'https://core.spgateway.com/API/CreditCard/Cancel';
-            $this->apiUrl['REFUND_API']
+            $this->apiUrl['CREDIT_CARD_REFUND_API']
                 = 'https://core.spgateway.com/API/CreditCard/Close';
+            $this->apiUrl['DELAYED_REFUND_API']
+                = 'https://core.spgateway.com/API/Refund';
         } else {
             $this->apiUrl['CREDIT_CARD_CANCEL_API']
                 = 'https://ccore.spgateway.com/API/CreditCard/Cancel';
-            $this->apiUrl['REFUND_API']
+            $this->apiUrl['CREDIT_CARD_REFUND_API']
                 = 'https://ccore.spgateway.com/API/CreditCard/Close';
+            $this->apiUrl['DELAYED_REFUND_API']
+                = 'https://ccore.spgateway.com/API/Refund';
         }
 
         $this->helpers = new Helpers();
@@ -33,20 +37,28 @@ class Refund
     /**
      * 產生智付通退費 / 取消授權必要資料
      *
-     * @param      $orderNo
-     * @param      $amount
-     * @param null $notifyUrl
+     * @param       $orderNo
+     * @param       $amount
+     * @param null  $notifyUrl
+     * @param bool  $delayed
+     * @param array $params
      *
      * @return Refund|object
      */
-    public function generate($orderNo, $amount, $notifyUrl = null)
-    {
+    public function generate(
+        $orderNo,
+        $amount,
+        $notifyUrl = null,
+        $delayed = false,
+        $params = []
+    ) {
         $mpg = new MPG();
         $tradeInfo = $mpg->search($orderNo, $amount);
         $tradeInfo = $tradeInfo->Result;
 
-        if ($tradeInfo->TradeStatus === "1"
-            && $tradeInfo->CloseStatus === "0"
+        if ($tradeInfo->TradeStatus === 1
+            && $tradeInfo->PaymentType === "CREDIT"
+            && $tradeInfo->CloseStatus === 0
         ) {
             $this->postData = $this->generateCreditCancel(
                 $orderNo,
@@ -55,15 +67,26 @@ class Refund
             );
 
             $this->postType = 'cancel';
-        } elseif ($tradeInfo->TradeStatus === "1"
-            && $tradeInfo->CloseStatus === "3"
+        } elseif ($tradeInfo->TradeStatus === 1
+            && $tradeInfo->PaymentType === "CREDIT"
+            && $tradeInfo->CloseStatus === 3
         ) {
             $this->postData = $this->generateCreditRefund(
                 $orderNo,
-                $amount
+                $amount,
+                $params
             );
 
             $this->postType = 'refund';
+        } elseif ($tradeInfo->TradeStatus === 1
+            && $delayed === true
+        ) {
+            $this->postData = $this->generateDelayedRefund(
+                $orderNo,
+                $params
+            );
+
+            $this->postType = 'delayed';
         } else {
             return (Object)[
                 'Status' => false,
@@ -97,10 +120,12 @@ class Refund
      */
     public function send()
     {
-        if($this->postType === 'cancel'){
+        if ($this->postType === 'cancel') {
             $url = $this->apiUrl['CREDIT_CARD_CANCEL_API'];
-        } else {
-            $url = $this->apiUrl['REFUND_API'];
+        } elseif ($this->postType === 'refund') {
+            $url = $this->apiUrl['CREDIT_CARD_REFUND_API'];
+        } elseif ($this->postType === 'delayed') {
+            $url = $this->apiUrl['DELAYED_REFUND_API'];
         }
 
         $res = $this->helpers->sendPostRequest($url, $this->postDataEncrypted);
@@ -142,20 +167,42 @@ class Refund
      *
      * @param $orderNo
      * @param $amount
+     * @param $params
      *
      * @return array
      */
-    private function generateCreditRefund($orderNo, $amount)
+    private function generateCreditRefund($orderNo, $amount, $params)
     {
         $postData = [
             'RespondType'     => 'JSON',
             'Version'         => '1.0',
-            'Amt'             => $orderNo,
+            'Amt'             => $params['RefundAmt'] ?? $orderNo,
             'MerchantOrderNo' => $amount,
             'IndexType'       => 1,
             'TimeStamp'       => time(),
             'CloseType'       => 2,
         ];
+
+        return $postData;
+    }
+
+    /**
+     *
+     *
+     * @param $orderNo
+     * @param $params
+     *
+     * @return array
+     */
+    private function generateDelayedRefund($orderNo, $params)
+    {
+        $postData = [
+            'Version'    => '1.0',
+            'TimeStamp'  => time(),
+            'MerOrderNo' => $orderNo
+        ];
+
+        $postData = array_merge($postData, $params);
 
         return $postData;
     }

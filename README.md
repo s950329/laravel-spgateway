@@ -2,6 +2,17 @@
 
 Laravel Spgateway是一個開源的 [智付通](https://www.spgateway.com/) 非官方套件
 
+## 目錄
+1. [環境要求](#要求)
+2. [安裝](#安裝)
+3. [配置](#配置)
+4. [使用](#使用)
+    1. [多功能收款MPG](#多功能收款MPG)
+    2. [電子發票](#電子發票串接)
+    3. [退款/取消授權](#退款/取消授權)
+    4. [平台費用扣款指示](#平台費用扣款指示)
+5. [License](#License)
+
 ## 要求
 
 1. PHP >= 7
@@ -64,7 +75,7 @@ SPGATEWAY_RECEIPT_MERCHANT_ID=
 
 ## 使用
 
-### 多功能收款 MPG 串接
+### 多功能收款MPG
 
 #### 快速上手
 建立訂單
@@ -106,7 +117,7 @@ $order = MPG::search(
 1. `amount (Integer)`: 訂單金額
 2. `email (String)`: 訂購人Email
 3. `itemDesc (String)`: 商品描述
-5. `[ params (Array) ]`: 其他可選參數，詳見[參數表](#參數表)
+5. `[ params (Array) ]`: 其他可選參數，詳見下方參數表
 
 ##### 回傳
 
@@ -183,7 +194,7 @@ $order->send();
 $tradeInfo = MPG::parse(request()->TradeInfo);
 ```
 
-> #### search ($orderNo, $amount)
+> ### search ($orderNo, $amount)
 
 產生智付通查詢訂單必要欄位
 
@@ -211,7 +222,7 @@ $order = MPG::search(
 );
 ```
 
-### 電子發票 串接
+### 電子發票
 
 #### 快速上手
 開立發票
@@ -261,13 +272,13 @@ $receipt = Receipt::search('20171121WJNBX5NNBP', 100);
 ```
 #### 可用方法
 
-> #### generate ($params)
+> ### generate ($params)
 
 產生智付通開立電子發票必要欄位
 
 ##### 參數
 
-1. `params (Array)`: 參數，詳見[可選參數](#可選參數)
+1. `params (Array)`: 詳見下方可選參數
 
 ##### 回傳
 
@@ -322,7 +333,7 @@ $receipt = Receipt::generate([
 ##### 備註
 * 本套件僅提供快速串接方式，詳細稅額計算方式請務必與公司財會人員進行確認
 
-> #### send()
+> ### send()
 
 傳送開立發票請求到智付通
 
@@ -341,7 +352,7 @@ $receipt = Receipt::generate([
 $res = $receipt->send();
 ```
 
-> #### generateTrigger ($invoiceTransNo, $orderNo, $amount)
+> ### generateTrigger ($invoiceTransNo, $orderNo, $amount)
 
 產生智付通觸發開立電子發票必要資訊
 
@@ -360,7 +371,7 @@ $res = $receipt->send();
 $receipt = Receipt::generateTrigger('17122817285242624', '20171121WJNBX5NNBP', 100);
 ```
 
-> #### sendTrigger()
+> ### sendTrigger()
 
 送出觸發開立電子發票請求到智付通
 
@@ -379,7 +390,7 @@ $receipt = Receipt::generateTrigger('17122817285242624', '20171121WJNBX5NNBP', 1
 $res = $receipt->sendTrigger();
 ```
 
-> #### generateInvalid ($receiptNumber, $invalidReason)
+> ### generateInvalid ($receiptNumber, $invalidReason)
 
 產生智付通觸發開立電子發票必要資訊
 
@@ -397,7 +408,7 @@ $res = $receipt->sendTrigger();
 $receipt = Receipt::generateInvalid('17122817285242624', '作廢原因');
 ```
 
-> #### sendInvalid()
+> ### sendInvalid()
 
 送出觸發開立電子發票請求到智付通
 
@@ -416,7 +427,7 @@ $receipt = Receipt::generateInvalid('17122817285242624', '作廢原因');
 $res = $receipt->sendInvalid();
 ```
 
-> #### search($orderNo, $amount)
+> ### search($orderNo, $amount)
 
 查詢發票
 
@@ -440,8 +451,9 @@ $res = $receipt->sendInvalid();
 $res = $receipt->search('20171121WJNBX5NNBP', 100);
 ```
 
-### 信用卡退款 / 取消授權 串接
+### 退款/取消授權
 因智付通信用卡退費有尚未請款需串接取消授權API，已請款需串接退款API之規則，本功能旨在整合此一過程，降低開發人員負擔
+另外也提供非即時交易退款功能
 
 #### 快速上手
 
@@ -458,15 +470,17 @@ $res = $refund->send();
 
 #### 可用方法
 
-> #### generate ($orderNo, $amount\[, $notifyUrl\])
+> ### generate ($orderNo, $amount\[, $notifyUrl = null, $delayed = false, $params = []\])
 
 產生智付通退費 / 取消授權必要欄位
 
 ##### 參數
 
 1. `orderNo (String)`: 商店自訂編號
-2. `amount (String)`: 商店自訂編號
-3. `[ notifyUrl (String) ]`: 接受取消授權結果位址，於取消授權時才需填寫
+2. `amount (String)`: 訂單金額，若不想全額退款請於可選參數中傳送Amt欄位
+3. `[ notifyUrl (String) ]`: 接受取消授權結果位址，於取消授權或非即時交易時才需填寫
+4. `[ delayed (Boolean) ]`: 是否為非即時交易
+5. `[ params (Array) ]`: 詳見下方參數表
 
 ##### 回傳
 
@@ -477,7 +491,26 @@ $res = $refund->send();
 $refund = Refund::generate('20171121WJNBX5NNBP', 100);
 ```
 
-> #### send()
+##### 可選參數
+1. 即時交易
+
+| 欄位      | 必填 |  型態  | 備註                                           |
+|-----------|:----:|:------:|------------------------------------------------|
+| RefundAmt |      | Number | 請退款金額，若發動退費後不退全額則需傳送此參數 |
+
+2. 非即時交易
+
+| 欄位        | 必填 |  型態  | 備註                              |
+|-------------|:----:|:------:|-----------------------------------|
+| AccNo       |   ✔  | String | 退款金額轉入之帳號                |
+| BankNo      |   ✔  | String | 金融機構總行代號                  |
+| SubBankCode |   ✔  | String | 金融機構分行代號                  |
+| AccName     |   ✔  | String | 帳戶使用名稱                      |
+| RefundAmt   |   ✔  | Number | 退款金額，必須小於等於訂單金額              |
+| Id          |   +  | String | 買方身分證字號，Id及UBN需擇一填寫 |
+| UBN         |   +  | String | 買方統一編號，Id及UBN需擇一填寫   |
+
+> ### send()
 
 傳送退費 / 取消授權請求到智付通
 
@@ -498,7 +531,7 @@ $refund = Refund::generate('20171121WJNBX5NNBP', 100);
 $res = $refund->send();
 ```
 
-### 平台費用扣款指示 串接
+### 平台費用扣款指示
 
 #### 快速上手
 ```
@@ -512,7 +545,7 @@ $res = $transfer->send();
 ```
 #### 可用方法
 
-> #### generate ($merchantID, $amount, $feeType, $balanceType)
+> ### generate ($merchantID, $amount, $feeType, $balanceType)
 
 產生智付通扣款指示必要欄位
 
@@ -532,7 +565,7 @@ $res = $transfer->send();
 $transfer = Transfer::generate('20171121WJNBX5NNBP', 100);
 ```
 
-> #### send()
+> ### send()
 
 傳送扣款指示請求到智付通
 
