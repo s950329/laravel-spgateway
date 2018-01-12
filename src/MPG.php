@@ -10,6 +10,25 @@ class MPG
     private $apiUrl;
     private $helpers;
     private $postData;
+    private $postDataEncrypted;
+
+    public function __construct()
+    {
+        $this->apiUrl = [];
+        if (env('APP_ENV') === 'production') {
+            $this->apiUrl['MPG_API']
+                = 'https://core.spgateway.com/MPG/mpg_gateway';
+            $this->apiUrl['QUERY_TRADE_INFO_API']
+                = 'https://core.spgateway.com/API/QueryTradeInfo';
+        } else {
+            $this->apiUrl['MPG_API']
+                = 'https://ccore.spgateway.com/MPG/mpg_gateway';
+            $this->apiUrl['QUERY_TRADE_INFO_API']
+                = 'https://ccore.spgateway.com/API/QueryTradeInfo';
+        }
+
+        $this->helpers = new Helpers();
+    }
 
     /**
      * 產生智付通訂單建立必要資訊
@@ -41,7 +60,6 @@ class MPG
             }
 
             $postData = [
-
                 'Amt'             => $amount,
                 'ItemDesc'        => $itemDesc,
                 'Email'           => $email,
@@ -74,7 +92,17 @@ class MPG
                 'CREDITAE'        => $params['BARCODE'] ?? null,
                 'ALIPAY'          => $params['ALIPAY'] ?? null,
                 'TENPAY'          => $params['TENPAY'] ?? null,
+
+                // 以下為支付寶 / 財付通專用欄位
+                'Receiver'        => $params['Receiver'] ?? null,
+                'Tel1'            => $params['Tel1'] ?? null,
+                'Tel2'            => $params['Tel2'] ?? null,
             ];
+
+            if(isset($params['Commodities'])){
+                $postData['Count'] = count($params['Commodities']);
+                $postData = array_merge($postData, $this->parseCommodities($params['Commodities']));
+            }
 
             $postData = array_filter($postData, function ($value) {
                 return ($value !== null && $value !== false && $value !== '');
@@ -88,26 +116,11 @@ class MPG
         }
     }
 
-    private $postDataEncrypted;
-
-    public function __construct()
-    {
-        $this->apiUrl = [];
-        if (env('APP_ENV') === 'production') {
-            $this->apiUrl['MPG_API']
-                = 'https://core.spgateway.com/MPG/mpg_gateway';
-            $this->apiUrl['QUERY_TRADE_INFO_API']
-                = 'https://core.spgateway.com/API/QueryTradeInfo';
-        } else {
-            $this->apiUrl['MPG_API']
-                = 'https://ccore.spgateway.com/MPG/mpg_gateway';
-            $this->apiUrl['QUERY_TRADE_INFO_API']
-                = 'https://ccore.spgateway.com/API/QueryTradeInfo';
-        }
-
-        $this->helpers = new Helpers();
-    }
-
+    /**
+     * 加密訂單資料
+     *
+     * @return $this
+     */
     public function encrypt()
     {
         $tradeInfo = $this->createMpgAesEncrypt($this->postData);
@@ -354,7 +367,8 @@ class MPG
         $key = config('spgateway.mpg.HashKey');
         $iv = config('spgateway.mpg.HashIV');
 
-        return $this->stripPadding(openssl_decrypt(hex2bin($parameter), 'aes-256-cbc', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING, $iv));
+        return $this->stripPadding(openssl_decrypt(hex2bin($parameter),
+            'aes-256-cbc', $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING, $iv));
     }
 
     private function createMpgSHA256Encrypt($aes)
@@ -449,5 +463,29 @@ class MPG
         $checkValue = strtoupper(hash("sha256", $check_code_str));
 
         return $checkValue;
+    }
+
+    /**
+     * 解析境外支付（支付寶/財付通）專用欄位
+     *
+     * @param array $commodities
+     *
+     * @return array
+     */
+    private function parseCommodities($commodities = [])
+    {
+        $newCommodities = [];
+
+        foreach ($commodities as $index => $commodity) {
+            $newCommodity = [];
+
+            foreach ($commodity as $key => $value) {
+                $newCommodity[$key . ($index + 1)] = $value;
+            }
+
+            $newCommodities = array_merge($newCommodities, $newCommodity);
+        }
+
+        return$newCommodities;
     }
 }
