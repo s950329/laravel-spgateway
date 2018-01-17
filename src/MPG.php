@@ -72,7 +72,6 @@ class MPG
                 'LangType'        => $params['LangType'] ?? 'zh-tw',
                 'TradeLimit'      => $params['TradeLimit'] ?? 180,
                 'ExpireDate'      => $params['ExpireDate'] ?? null,
-                'ExpireTime'      => $params['ExpireTime'] ?? null,
                 'ReturnURL'       => $params['ReturnURL'] ?? null,
                 'NotifyURL'       => $params['NotifyURL'] ?? null,
                 'CustomerURL'     => $params['CustomerURL'] ?? null,
@@ -189,34 +188,18 @@ class MPG
         }
 
         if (isset($params['ExpireDate'])) {
-            if (date_parse_from_format('Y-m-d',
+            if (date_parse_from_format('Ymd',
                     $params['ExpireDate'])['error_count']
                 > 0
             ) {
                 return $this->errorMessage('ExpireDate',
-                    '格式需為Y-m-d，如:2017-01-01');
+                    '格式需為Ymd，如:20170101');
             }
 
-            if (strtotime($params['ExpireDate']) < time()
-                || strtotime('-180 days', $params['ExpireDate']) > time()
+            if (strtotime($params['ExpireDate']) < strtotime('today')
+                || strtotime('-180 days', strtotime($params['ExpireDate'])) > strtotime('today')
             ) {
                 return $this->errorMessage('ExpireDate', '可接受最大值為 180 天');
-            }
-        }
-
-        if (isset($params['ExpireTime'])) {
-            if (date_parse_from_format('H:i:s',
-                    $params['ExpireTime'])['error_count']
-                > 0
-            ) {
-                return $this->errorMessage('ExpireTime',
-                    '格式需為Y-m-d，如:2017-01-01');
-            }
-
-            if (strtotime($params['ExpireTime']) < time()
-                || strtotime('-1 hour', $params['ExpireTime']) > time()
-            ) {
-                return $this->errorMessage('ExpireTime', '可接受最大值為 180 天');
             }
         }
 

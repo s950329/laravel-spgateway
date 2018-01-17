@@ -153,7 +153,6 @@ $order = MPG::generate(
 | LangType        |    String    |   `zh-tw` / `en`  | `zh-tw` |                                   |
 | TradeLimit      |    Number    |      60 ~ 900     |   180   |                                   |
 | ExpireDate      | String (Ymd) |                   |         |      範例：20171231                             |
-| ExpireTime      | String (His) |                   |         |      範例：183005                             |
 | ReturnURL       |      Url     |                   |         |                                   |
 | NotifyURL       |      Url     |                   |         |                                   |
 | CustomerURL     |      Url     |                   |         |                                   |
