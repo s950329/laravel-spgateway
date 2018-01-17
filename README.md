@@ -1,4 +1,16 @@
+<p align="center">
+    <b>Special thanks to the generous sponsorship by:</b>
+    <br><br>
+    <a href="https://www.hourmasters.com">
+      <img src="https://trello-attachments.s3.amazonaws.com/58a52a5cba3fdf7e02fe0b46/5a5ca9636a152015ebcddf8c/fd59154d52b5593b6082d96466694f73/slogan-01.png" width=350>
+    </a>
+</p>
+
 # Laravel Spgateway
+[![Latest Stable Version](https://poser.pugx.org/leochien/laravel-spgateway/v/stable)](https://packagist.org/packages/leochien/laravel-spgateway)
+    [![Total Downloads](https://poser.pugx.org/leochien/laravel-spgateway/downloads)](https://packagist.org/packages/leochien/laravel-spgateway)
+    [![Latest Unstable Version](https://poser.pugx.org/leochien/laravel-spgateway/v/unstable)](https://packagist.org/packages/leochien/laravel-spgateway)
+    [![License](https://poser.pugx.org/leochien/laravel-spgateway/license)](https://packagist.org/packages/leochien/laravel-spgateway)
 
 Laravel Spgateway是一個開源的 [智付通](https://www.spgateway.com/) 非官方套件
 
@@ -88,7 +100,7 @@ $order = MPG::generate(
     '測試商品'
 );
 
-// $order的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+// $order的 getPostData() 及 getPostDataEncrypted() 會回傳包含即將傳送到智付通的表單資料，可在此時紀錄log
 
 // 前台送出表單到智付通
 return $order->send();
@@ -122,7 +134,7 @@ $order = MPG::search(
 
 ##### 回傳
 
-1. `(Class)`: MPG Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料
+1. `(Class)`: MPG Class實體，其中getPostData() 及 getPostDataEncrypted()會回傳即將送到智付通的表單資料
 
 ##### 使用範例
 ```
@@ -174,14 +186,14 @@ $order->send();
 
 > ### parse ($tradeInfo)
 
-解析智付通交易結果回傳參數
+解析智付通交易結果回傳參數，也適用於取號完成
 
 ##### 參數
 
 1. `tradeInfo (String)`: 智付通回傳，經AES加密之交易資料
 
 ##### 回傳
-詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/4.pdf)第四節：交易查詢系統回應訊息
+詳見[智付通文件](https://www.spgateway.com/WebSiteData/document/5.pdf)第六節：交易支付系統回傳參數說明 / 第七節：取號完成系統回傳參數說明
 ```
 {
     "Status": "..."
@@ -238,7 +250,7 @@ $receipt = Receipt::generate([
     'ItemPrice'       => [10],
 ]);
 
-// $receipt的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+// $receipt的 getPostData() 及 getPostDataEncrypted 會回傳即將傳送到智付通的表單資料，可在此時紀錄log
 
 // 送出開立發票申請，取得發票開立回傳結果
 $res = $receipt->send();
@@ -249,7 +261,7 @@ $res = $receipt->send();
 // 產生智付通出發開立發票資料
 $receipt = Receipt::generateTrigger('17122817285242624', '20171121WJNBX5NNBP', 100);
 
-// $receipt的 triggerPostData 及 triggerPostDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+// $receipt的 getTriggerPostData() 及 getTriggerPostDataEncrypted() 會回傳即將傳送到智付通的表單資料，可在此時紀錄log
 
 // 送出觸發開立發票申請，取得發票觸發開立回傳結果
 $res = $receipt->send();
@@ -260,7 +272,7 @@ $res = $receipt->send();
 // 產生智付通作廢發票資料
 $receipt = Receipt::generateInvalid('YF83646422', '作廢原因');
 
-// $receipt的 invalidPostData 及 invalidPostDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+// $receipt的 getInvalidPostData() 及 getInvalidPostDataEncrypted() 會回傳即將傳送到智付通的表單資料，可在此時紀錄log
 
 // 送出作廢發票申請，取得作廢發票回傳結果
 $res = $receipt->sendInvalid();
@@ -283,7 +295,7 @@ $receipt = Receipt::search('20171121WJNBX5NNBP', 100);
 
 ##### 回傳
 
-1. `(Class)`: Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料
+1. `(Class)`: Class實體，其中getPostData() 及 getPostDataEncrypted()包含即將送到智付通的表單資料
 
 ##### 使用範例
 ```
@@ -365,7 +377,7 @@ $res = $receipt->send();
 
 ##### 回傳
 
-1. `(Class)`: Class實體，其中triggerPostData 及 triggerPostDataEncrypted包含即將送到智付通的表單資料
+1. `(Class)`: Class實體，其中getTriggerPostData() 及 getTriggerPostDataEncrypted()會回傳即將送到智付通的表單資料
 
 ##### 使用範例
 ```
@@ -402,7 +414,7 @@ $res = $receipt->sendTrigger();
 
 ##### 回傳
 
-1. `(Class)`: Class實體，其中invalidPostData 及 invalidPostDataEncrypted包含即將送到智付通的表單資料
+1. `(Class)`: Class實體，其中getInvalidPostData() 及 getInvalidPostDataEncrypted()會回傳即將送到智付通的表單資料
 
 ##### 使用範例
 ```
@@ -463,7 +475,7 @@ $res = $receipt->search('20171121WJNBX5NNBP', 100);
 $refund = Refund::generate('20171121WJNBX5NNBP', 100);
 
 // $refund的 postType為cacnel時，訂單準備取消授權；為refund時，訂單準備退款
-// $refund的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+// $refund的 getPostData() 及 getPostDataEncrypted() 會回傳即將傳送到智付通的表單資料，可在此時紀錄log
 
 // 送出退款/取消授權申請，取得回傳結果
 $res = $refund->send();
@@ -485,7 +497,7 @@ $res = $refund->send();
 
 ##### 回傳
 
-1. `(Class)`: Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料；postType為cacnel時，訂單準備取消授權，為refund時，訂單準備退款
+1. `(Class)`: Class實體，其中getPostData() 及 getPostDataEncrypted()包含即將送到智付通的表單資料；getPostType()為cacnel時，訂單準備取消授權，為refund時，訂單準備退款
 
 ##### 使用範例
 ```
@@ -539,7 +551,7 @@ $res = $refund->send();
 // 產生平台費用扣款指示必要資訊
 $transfer = Transfer::generate('20171121WJNBX5NNBP', 100, 0, 0);
 
-// $transfer的 postData 及 postDataEncrypted 中包含即將傳送到智付通的表單資料，可在此時紀錄log
+// $transfer的 getPostData() 及 getPostDataEncrypted() 會回傳即將傳送到智付通的表單資料，可在此時紀錄log
 
 // 送出扣款指示申請，取得扣款指示回傳結果
 $res = $transfer->send();
@@ -559,7 +571,7 @@ $res = $transfer->send();
 
 ##### 回傳
 
-1. `(Class)`: Class實體，其中postData 及 postDataEncrypted包含即將送到智付通的表單資料
+1. `(Class)`: Class實體，其中getPostData() 及 getPostDataEncrypted()包含即將送到智付通的表單資料
 
 ##### 使用範例
 ```

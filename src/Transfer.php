@@ -90,4 +90,12 @@ class Transfer
 
         return $result;
     }
+
+    public function getPostData(){
+        return $this->postData;
+    }
+
+    public function getPostDataEncrypted(){
+        return $this->postDataEncrypted;
+    }
 }

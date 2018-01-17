@@ -341,4 +341,28 @@ class Receipt
 
         return $result;
     }
+
+    public function getPostData(){
+        return $this->postData;
+    }
+
+    public function getPostDataEncrypted(){
+        return $this->postDataEncrypted;
+    }
+
+    public function getTriggerPostData(){
+        return $this->triggerPostData;
+    }
+
+    public function getTriggerPostDataEncrypted(){
+        return $this->triggerPostDataEncrypted;
+    }
+
+    public function getInvalidPostData(){
+        return $this->invalidPostData;
+    }
+
+    public function getInvalidPostDataEncrypted(){
+        return $this->invalidPostDataEncrypted;
+    }
 }

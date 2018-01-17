@@ -206,4 +206,16 @@ class Refund
 
         return $postData;
     }
+
+    public function getPostData(){
+        return $this->postData;
+    }
+
+    public function getPostType(){
+        return $this->postType;
+    }
+
+    public function getPostDataEncrypted(){
+        return $this->postDataEncrypted;
+    }
 }
