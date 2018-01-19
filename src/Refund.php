@@ -56,9 +56,9 @@ class Refund
         $tradeInfo = $mpg->search($orderNo, $amount);
         $tradeInfo = $tradeInfo->Result;
 
-        if ($tradeInfo->TradeStatus === 1
+        if ($tradeInfo->TradeStatus === "1"
             && $tradeInfo->PaymentType === "CREDIT"
-            && $tradeInfo->CloseStatus === 0
+            && $tradeInfo->CloseStatus === "0"
         ) {
             $this->postData = $this->generateCreditCancel(
                 $orderNo,
@@ -67,9 +67,9 @@ class Refund
             );
 
             $this->postType = 'cancel';
-        } elseif ($tradeInfo->TradeStatus === 1
+        } elseif ($tradeInfo->TradeStatus === "1"
             && $tradeInfo->PaymentType === "CREDIT"
-            && $tradeInfo->CloseStatus === 3
+            && $tradeInfo->CloseStatus === "3"
         ) {
             $this->postData = $this->generateCreditRefund(
                 $orderNo,
@@ -78,7 +78,7 @@ class Refund
             );
 
             $this->postType = 'refund';
-        } elseif ($tradeInfo->TradeStatus === 1
+        } elseif ($tradeInfo->TradeStatus === "1"
             && $delayed === true
         ) {
             $this->postData = $this->generateDelayedRefund(
