@@ -78,7 +78,7 @@ class Transfer
     public function send()
     {
         $res = $this->helpers->sendPostRequest(
-            $this->apiUrl['CREATE_RECEIPT_API'],
+            $this->apiUrl['CHARGE_INSTRUCT_API'],
             $this->postDataEncrypted
         );
 
