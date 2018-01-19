@@ -60,7 +60,7 @@ class Transfer
      */
     public function encrypt()
     {
-        $postData_ = $this->helpers->encryptPostData($this->postData);
+        $postData_ = $this->encryptPostData($this->postData);
 
         $this->postDataEncrypted = [
             'PartnerID_' => config('spgateway.PartnerID'),
@@ -68,6 +68,31 @@ class Transfer
         ];
 
         return $this;
+    }
+
+    /**
+     * 智付通資料加密
+     *
+     * @param $postData
+     *
+     * @return string
+     */
+    public function encryptPostData(
+        $postData
+    ) {
+        // 所有資料與欄位使用 = 符號組合，並用 & 符號串起字串
+        $postData = http_build_query($postData);
+
+        // 加密字串
+        $post_data = trim(bin2hex(openssl_encrypt(
+            $this->addPadding($postData),
+            'AES-256-CBC',
+            config('spgateway.CompanyKey'),
+            OPENSSL_RAW_DATA | OPENSSL_NO_PADDING,
+            config('spgateway.CompanyIV')
+        )));
+
+        return $post_data;
     }
 
     /**
