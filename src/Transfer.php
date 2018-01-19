@@ -85,7 +85,7 @@ class Transfer
 
         // 加密字串
         $post_data = trim(bin2hex(openssl_encrypt(
-            $this->addPadding($postData),
+            $this->helpers->addPadding($postData),
             'AES-256-CBC',
             config('spgateway.CompanyKey'),
             OPENSSL_RAW_DATA | OPENSSL_NO_PADDING,
