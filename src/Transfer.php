@@ -98,13 +98,16 @@ class Transfer
     /**
      * 傳送扣款指示要求到智付通
      *
+     * @param array $headers 自訂Headers
+     *
      * @return mixed
      */
-    public function send()
+    public function send($headers = [])
     {
         $res = $this->helpers->sendPostRequest(
             $this->apiUrl['CHARGE_INSTRUCT_API'],
-            $this->postDataEncrypted
+            $this->postDataEncrypted,
+            $headers
         );
 
         $result = json_decode($res);

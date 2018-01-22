@@ -116,9 +116,11 @@ class Refund
     /**
      * 傳送退款 / 取消授權請求到智付通
      *
+     * @param array $headers 自訂Headers
+     *
      * @return mixed|string
      */
-    public function send()
+    public function send($headers = [])
     {
         if ($this->postType === 'cancel') {
             $url = $this->apiUrl['CREDIT_CARD_CANCEL_API'];
@@ -128,7 +130,11 @@ class Refund
             $url = $this->apiUrl['DELAYED_REFUND_API'];
         }
 
-        $res = $this->helpers->sendPostRequest($url, $this->postDataEncrypted);
+        $res = $this->helpers->sendPostRequest(
+            $url,
+            $this->postDataEncrypted,
+            $headers
+        );
 
         $res = json_decode($res);
 
@@ -207,15 +213,18 @@ class Refund
         return $postData;
     }
 
-    public function getPostData(){
+    public function getPostData()
+    {
         return $this->postData;
     }
 
-    public function getPostType(){
+    public function getPostType()
+    {
         return $this->postType;
     }
 
-    public function getPostDataEncrypted(){
+    public function getPostDataEncrypted()
+    {
         return $this->postDataEncrypted;
     }
 }

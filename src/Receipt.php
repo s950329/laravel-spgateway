@@ -137,13 +137,16 @@ class Receipt
     /**
      * 傳送開立發票請求到智付通
      *
+     * @param array $headers 自訂Headers
+     *
      * @return mixed
      */
-    public function send()
+    public function send($headers = [])
     {
         $res = $this->helpers->sendPostRequest(
             $this->apiUrl['CREATE_RECEIPT_API'],
-            $this->postDataEncrypted
+            $this->postDataEncrypted,
+            $headers
         );
 
         $result = json_decode($res);
@@ -342,27 +345,33 @@ class Receipt
         return $result;
     }
 
-    public function getPostData(){
+    public function getPostData()
+    {
         return $this->postData;
     }
 
-    public function getPostDataEncrypted(){
+    public function getPostDataEncrypted()
+    {
         return $this->postDataEncrypted;
     }
 
-    public function getTriggerPostData(){
+    public function getTriggerPostData()
+    {
         return $this->triggerPostData;
     }
 
-    public function getTriggerPostDataEncrypted(){
+    public function getTriggerPostDataEncrypted()
+    {
         return $this->triggerPostDataEncrypted;
     }
 
-    public function getInvalidPostData(){
+    public function getInvalidPostData()
+    {
         return $this->invalidPostData;
     }
 
-    public function getInvalidPostDataEncrypted(){
+    public function getInvalidPostDataEncrypted()
+    {
         return $this->invalidPostDataEncrypted;
     }
 }

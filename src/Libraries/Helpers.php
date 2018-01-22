@@ -55,13 +55,13 @@ class Helpers
         return $string;
     }
 
-    public function sendPostRequest($url, $postData)
+    public function sendPostRequest($url, $postData, $headers)
     {
         return $this->client
             ->request(
                 'POST',
                 $url,
-                ['form_params' => $postData,]
+                ['form_params' => $postData, 'headers' => $headers]
             )
             ->getBody()
             ->getContents();
