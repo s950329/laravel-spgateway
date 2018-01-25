@@ -211,8 +211,12 @@ class Receipt
      */
     private function encryptTrigger()
     {
-        $postDataEncrypted
-            = $this->helpers->encryptPostData($this->triggerPostData);
+        $postDataEncrypted = $this->helpers
+            ->encryptPostData(
+                $this->triggerPostData,
+                config('spgateway.receipt.HashKey'),
+                config('spgateway.receipt.HashIV')
+            );
 
         $this->triggerPostDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),

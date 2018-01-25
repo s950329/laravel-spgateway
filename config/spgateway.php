@@ -11,7 +11,6 @@ return [
     |
      */
     'mpg' => [
-        'Version' => env('SPGATEWAY_MPG_VERSION', 1.2),
         'MerchantID' => env('SPGATEWAY_MERCHANT_ID', ''),
         'HashKey' => env('SPGATEWAY_HASH_KEY', ''),
         'HashIV' => env('SPGATEWAY_HASH_IV', ''),

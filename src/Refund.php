@@ -106,7 +106,7 @@ class Refund
         $PostData_ = $this->helpers->encryptPostData($this->postData);
 
         $this->postDataEncrypted = [
-            'MerchantID_' => env('SPGATEWAY_MERCHANT_ID'),
+            'MerchantID_' => config('spgateway.mpg.MerchantID'),
             'PostData_'   => $PostData_,
         ];
 

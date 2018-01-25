@@ -23,12 +23,17 @@ class Helpers
     /**
      * 智付通資料加密
      *
-     * @param $postData
+     * @param      $postData
+     *
+     * @param null $key
+     * @param null $iv
      *
      * @return string
      */
     public function encryptPostData(
-        $postData
+        $postData,
+        $key = null,
+        $iv = null
     ) {
         // 所有資料與欄位使用 = 符號組合，並用 & 符號串起字串
         $postData = http_build_query($postData);
@@ -37,9 +42,9 @@ class Helpers
         $post_data = trim(bin2hex(openssl_encrypt(
             $this->addPadding($postData),
             'AES-256-CBC',
-            config('spgateway.receipt.HashKey'),
+            $key ?? config('spgateway.mpg.HashKey'),
             OPENSSL_RAW_DATA | OPENSSL_NO_PADDING,
-            config('spgateway.receipt.HashIV')
+            $iv ?? config('spgateway.mpg.HashIV')
         )));
 
         return $post_data;
@@ -55,7 +60,7 @@ class Helpers
         return $string;
     }
 
-    public function sendPostRequest($url, $postData, $headers)
+    public function sendPostRequest($url, $postData, $headers = [])
     {
         return $this->client
             ->request(
@@ -72,7 +77,8 @@ class Helpers
      *
      * @return string
      */
-    public function generateOrderNo(){
-        return date('YmdHis').str_random(6);
+    public function generateOrderNo()
+    {
+        return date('YmdHis') . str_random(6);
     }
 }
