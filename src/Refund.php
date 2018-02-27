@@ -182,8 +182,8 @@ class Refund
         $postData = [
             'RespondType'     => 'JSON',
             'Version'         => '1.0',
-            'Amt'             => $params['RefundAmt'] ?? $orderNo,
-            'MerchantOrderNo' => $amount,
+            'Amt'             => $params['RefundAmt'] ?? $amount,
+            'MerchantOrderNo' => $orderNo,
             'IndexType'       => 1,
             'TimeStamp'       => time(),
             'CloseType'       => 2,
