@@ -177,8 +177,8 @@ class MPG
             return $this->errorMessage('Amt', '必須為大於0的整數');
         }
 
-        if (strlen($itemDesc) > 50) {
-            return $this->errorMessage('Amt', '必須小於50字');
+        if (mb_strlen($itemDesc) > 50) {
+            return $this->errorMessage('ItemDesc', '必須小於50字');
         }
 
         if (isset($params['TradeLimit'])) {
