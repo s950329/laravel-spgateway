@@ -47,17 +47,25 @@ class Receipt
      *
      * @return $this|array
      */
-    public function generate(
-        array $params
-    ) {
+    public function generate(array $params) {
         $params['TaxRate'] = $params['TaxRate'] ?? 5;
         $params['Category'] = $params['Category'] ?? 'B2C';
 
         $itemAmt = [];
+
+        if ($params['Category'] === 'B2B') {
+            $params['ItemPrice'] = array_map(function($price) use ($params) {
+                return $this->priceBeforeTax($price, $params['TaxRate']);
+            }, $params['ItemPrice']);
+        }
+
         foreach ($params['ItemCount'] as $k => $v) {
             if ($params['Category'] === 'B2B') {
                 $itemAmt[$k] = $this->priceBeforeTax($params['ItemCount'][$k]
                      * $params['ItemPrice'][$k], $params['TaxRate']);
+
+                $itemAmt[$k] = $this->priceBeforeTax($params['ItemCount'][$k]
+                    * $params['ItemPrice'][$k], $params['TaxRate']);
             } else {
                 $itemAmt[$k] = $params['ItemCount'][$k]
                      * $params['ItemPrice'][$k];
