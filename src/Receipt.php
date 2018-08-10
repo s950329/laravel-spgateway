@@ -19,22 +19,22 @@ class Receipt
     {
         if (env('APP_ENV') === 'production') {
             $this->apiUrl['CREATE_RECEIPT_API']
-            = 'https://inv.pay2go.com/API/invoice_issue';
+                = 'https://inv.pay2go.com/API/invoice_issue';
             $this->apiUrl['INVALID_RECEIPT_API']
-            = 'https://inv.pay2go.com/API/invoice_invalid';
+                = 'https://inv.pay2go.com/API/invoice_invalid';
             $this->apiUrl['TRIGGER_RECEIPT_API']
-            = 'https://inv.pay2go.com/API/invoice_touch_issue';
+                = 'https://inv.pay2go.com/API/invoice_touch_issue';
             $this->apiUrl['SEARCH_RECEIPT_API']
-            = 'https://inv.pay2go.com/API/invoice_search';
+                = 'https://inv.pay2go.com/API/invoice_search';
         } else {
             $this->apiUrl['CREATE_RECEIPT_API']
-            = 'https://cinv.pay2go.com/API/invoice_issue';
+                = 'https://cinv.pay2go.com/API/invoice_issue';
             $this->apiUrl['INVALID_RECEIPT_API']
-            = 'https://cinv.pay2go.com/API/invoice_invalid';
+                = 'https://cinv.pay2go.com/API/invoice_invalid';
             $this->apiUrl['TRIGGER_RECEIPT_API']
-            = 'https://cinv.pay2go.com/API/invoice_touch_issue';
+                = 'https://cinv.pay2go.com/API/invoice_touch_issue';
             $this->apiUrl['SEARCH_RECEIPT_API']
-            = 'https://cinv.pay2go.com/API/invoice_search';
+                = 'https://cinv.pay2go.com/API/invoice_search';
         }
 
         $this->helpers = new Helpers();
@@ -47,29 +47,22 @@ class Receipt
      *
      * @return $this|array
      */
-    public function generate(array $params) {
+    public function generate(array $params)
+    {
         $params['TaxRate'] = $params['TaxRate'] ?? 5;
         $params['Category'] = $params['Category'] ?? 'B2C';
 
         $itemAmt = [];
 
         if ($params['Category'] === 'B2B') {
-            $params['ItemPrice'] = array_map(function($price) use ($params) {
+            $params['ItemPrice'] = array_map(function ($price) use ($params) {
                 return $this->priceBeforeTax($price, $params['TaxRate']);
             }, $params['ItemPrice']);
         }
 
         foreach ($params['ItemCount'] as $k => $v) {
-            if ($params['Category'] === 'B2B') {
-                $itemAmt[$k] = $this->priceBeforeTax($params['ItemCount'][$k]
-                     * $params['ItemPrice'][$k], $params['TaxRate']);
-
-                $itemAmt[$k] = $this->priceBeforeTax($params['ItemCount'][$k]
-                    * $params['ItemPrice'][$k], $params['TaxRate']);
-            } else {
-                $itemAmt[$k] = $params['ItemCount'][$k]
-                     * $params['ItemPrice'][$k];
-            }
+            $itemAmt[$k] = $params['ItemCount'][$k]
+                * $params['ItemPrice'][$k];
         }
 
         $params['ItemName'] = implode('|', $params['ItemName']);
@@ -80,41 +73,41 @@ class Receipt
 
         // 智付通開立電子發票必要資訊
         $postData = [
-            'RespondType' => $params['RespondType'] ?? 'JSON',
-            'Version' => '1.4',
-            'TimeStamp' => time(),
-            'TransNum' => $params['TransNum'] ?? null,
-            'MerchantOrderNo' => $params['MerchantOrderNo'] ??
-            $this->helpers->generateOrderNo(),
-            'Status' => $params['Status'] ?? '1',
+            'RespondType'      => $params['RespondType'] ?? 'JSON',
+            'Version'          => '1.4',
+            'TimeStamp'        => time(),
+            'TransNum'         => $params['TransNum'] ?? null,
+            'MerchantOrderNo'  => $params['MerchantOrderNo'] ??
+                $this->helpers->generateOrderNo(),
+            'Status'           => $params['Status'] ?? '1',
             'CreateStatusTime' => $params['CreateStatusTime'] ?? null,
-            'Category' => $params['Category'] ?? 'B2C',
-            'BuyerName' => $params['BuyerName'],
-            'BuyerUBN' => $params['BuyerUBN'] ?? null,
-            'BuyerAddress' => $params['BuyerAddress'] ?? null,
-            'BuyerEmail' => $params['BuyerEmail'],
-            'CarrierType' => $params['CarrierType'] ?? null,
-            'CarrierNum' => $params['CarrierNum'] ?? null,
-            'LoveCode' => $params['LoveCode'] ?? null,
-            'PrintFlag' => $params['PrintFlag'] ?? 'Y',
-            'TaxType' => $params['TaxType'] ?? '1',
-            'TaxRate' => $params['TaxRate'] ?? 5,
+            'Category'         => $params['Category'] ?? 'B2C',
+            'BuyerName'        => $params['BuyerName'],
+            'BuyerUBN'         => $params['BuyerUBN'] ?? null,
+            'BuyerAddress'     => $params['BuyerAddress'] ?? null,
+            'BuyerEmail'       => $params['BuyerEmail'],
+            'CarrierType'      => $params['CarrierType'] ?? null,
+            'CarrierNum'       => $params['CarrierNum'] ?? null,
+            'LoveCode'         => $params['LoveCode'] ?? null,
+            'PrintFlag'        => $params['PrintFlag'] ?? 'Y',
+            'TaxType'          => $params['TaxType'] ?? '1',
+            'TaxRate'          => $params['TaxRate'] ?? 5,
             'CustomsClearance' => $params['CustomsClearance'] ?? null,
-            'Amt' => $this->priceBeforeTax($params['TotalAmt'],
+            'Amt'              => $this->priceBeforeTax($params['TotalAmt'],
                 $params['TaxRate']),
-            'AmtSales' => $params['AmtSales'] ?? null,
-            'AmtZero' => $params['AmtZero'] ?? null,
-            'AmtFree' => $params['AmtFree'] ?? null,
-            'TaxAmt' => $this->calcTax($params['TotalAmt'],
+            'AmtSales'         => $params['AmtSales'] ?? null,
+            'AmtZero'          => $params['AmtZero'] ?? null,
+            'AmtFree'          => $params['AmtFree'] ?? null,
+            'TaxAmt'           => $this->calcTax($params['TotalAmt'],
                 $params['TaxRate']),
-            'TotalAmt' => $params['TotalAmt'],
-            'ItemName' => $params['ItemName'],
-            'ItemCount' => $params['ItemCount'],
-            'ItemUnit' => $params['ItemUnit'],
-            'ItemPrice' => $params['ItemPrice'],
-            'ItemAmt' => $params['ItemAmt'],
-            'ItemTaxType' => $params['ItemTaxType'] ?? null,
-            'Comment' => $params['Comment'] ?? null,
+            'TotalAmt'         => $params['TotalAmt'],
+            'ItemName'         => $params['ItemName'],
+            'ItemCount'        => $params['ItemCount'],
+            'ItemUnit'         => $params['ItemUnit'],
+            'ItemPrice'        => $params['ItemPrice'],
+            'ItemAmt'          => $params['ItemAmt'],
+            'ItemTaxType'      => $params['ItemTaxType'] ?? null,
+            'Comment'          => $params['Comment'] ?? null,
         ];
 
         $this->postData = array_filter($postData, function ($value) {
@@ -122,6 +115,18 @@ class Receipt
         });
 
         return $this->encrypt();
+    }
+
+    public function priceBeforeTax($price, $tax)
+    {
+        return $price - $this->calcTax($price, $tax);
+    }
+
+    public function calcTax($price, $tax)
+    {
+        $taxRate = $tax / 100;
+
+        return $price - round($price / (1 + $taxRate));
     }
 
     /**
@@ -139,7 +144,7 @@ class Receipt
 
         $this->postDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
-            'PostData_' => $postDataEncrypted,
+            'PostData_'   => $postDataEncrypted,
         ];
 
         return $this;
@@ -169,17 +174,6 @@ class Receipt
         return $result;
     }
 
-    public function calcTax($price, $tax)
-    {
-        $taxRate = $tax / 100;
-        return $price - round($price / (1 + $taxRate));
-    }
-
-    public function priceBeforeTax($price, $tax)
-    {
-        return $price - $this->calcTax($price, $tax);
-    }
-
     /**
      * 產生智付通觸發開立電子發票必要資訊
      *
@@ -198,13 +192,13 @@ class Receipt
     ) {
         // 智付通作廢電子發票必要資訊
         $triggerPostData = [
-            'RespondType' => 'JSON',
-            'Version' => '1.0',
-            'TimeStamp' => time(),
-            'TransNum' => $transNum,
-            'InvoiceTransNo' => $invoiceTransNo,
+            'RespondType'     => 'JSON',
+            'Version'         => '1.0',
+            'TimeStamp'       => time(),
+            'TransNum'        => $transNum,
+            'InvoiceTransNo'  => $invoiceTransNo,
             'MerchantOrderNo' => $orderNo,
-            'TotalAmt' => $amount,
+            'TotalAmt'        => $amount,
         ];
 
         $this->triggerPostData = array_filter($triggerPostData,
@@ -231,7 +225,7 @@ class Receipt
 
         $this->triggerPostDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
-            'PostData_' => $postDataEncrypted,
+            'PostData_'   => $postDataEncrypted,
         ];
 
         return $this;
@@ -272,9 +266,9 @@ class Receipt
     ) {
         // 智付通作廢電子發票必要資訊
         $this->invalidPostData = [
-            'RespondType' => 'JSON',
-            'Version' => '1.0',
-            'TimeStamp' => time(),
+            'RespondType'   => 'JSON',
+            'Version'       => '1.0',
+            'TimeStamp'     => time(),
             'InvoiceNumber' => $receiptNumber,
             'InvalidReason' => $invalidReason,
         ];
@@ -290,11 +284,11 @@ class Receipt
     private function encryptInvalid()
     {
         $postDataEncrypted
-        = $this->helpers->encryptPostData($this->invalidPostData);
+            = $this->helpers->encryptPostData($this->invalidPostData);
 
         $this->invalidPostDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
-            'PostData_' => $postDataEncrypted,
+            'PostData_'   => $postDataEncrypted,
         ];
 
         return $this;
@@ -332,17 +326,17 @@ class Receipt
     public function search($orderNo, $amount)
     {
         $postData = [
-            'RespondType' => 'JSON',
-            'Version' => '1.1',
-            'TimeStamp' => time(),
-            'SearchType' => 1,
+            'RespondType'     => 'JSON',
+            'Version'         => '1.1',
+            'TimeStamp'       => time(),
+            'SearchType'      => 1,
             'MerchantOrderNo' => $orderNo,
-            'TotalAmt' => $amount,
+            'TotalAmt'        => $amount,
         ];
 
         $postDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
-            'PostData_' => $this->helpers->encryptPostData($postData),
+            'PostData_'   => $this->helpers->encryptPostData($postData),
         ];
 
         $res = $this->helpers->sendPostRequest(
