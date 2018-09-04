@@ -60,13 +60,13 @@ class Helpers
         return $string;
     }
 
-    public function sendPostRequest($url, $postData, $headers = [])
+    public function sendPostRequest($url, $postData, $options = [])
     {
         return $this->client
             ->request(
                 'POST',
                 $url,
-                ['form_params' => $postData, 'headers' => $headers]
+                array_merge(['form_params' => $postData], $options),
             )
             ->getBody()
             ->getContents();

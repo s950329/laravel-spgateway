@@ -102,12 +102,12 @@ class Transfer
      *
      * @return mixed
      */
-    public function send($headers = [])
+    public function send($options = [])
     {
         $res = $this->helpers->sendPostRequest(
             $this->apiUrl['CHARGE_INSTRUCT_API'],
             $this->postDataEncrypted,
-            $headers
+            $options
         );
 
         $result = json_decode($res);

@@ -157,12 +157,12 @@ class Receipt
      *
      * @return mixed
      */
-    public function send($headers = [])
+    public function send($options = [])
     {
         $res = $this->helpers->sendPostRequest(
             $this->apiUrl['CREATE_RECEIPT_API'],
             $this->postDataEncrypted,
-            $headers
+            $options
         );
 
         $result = json_decode($res);
