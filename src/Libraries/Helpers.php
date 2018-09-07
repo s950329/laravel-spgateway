@@ -66,7 +66,7 @@ class Helpers
             ->request(
                 'POST',
                 $url,
-                array_merge(['form_params' => $postData], $options),
+                array_merge(['form_params' => $postData], $options)
             )
             ->getBody()
             ->getContents();
