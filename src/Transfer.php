@@ -13,7 +13,7 @@ class Transfer
 
     public function __construct()
     {
-        if (env('APP_ENV') === 'production') {
+        if (config('app.env') === 'production') {
             $this->apiUrl['CHARGE_INSTRUCT_API']
                 = 'https://core.spgateway.com/API/ChargeInstruct';
         } else {
