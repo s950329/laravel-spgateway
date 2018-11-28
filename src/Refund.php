@@ -15,7 +15,7 @@ class Refund
     public function __construct()
     {
         $this->apiUrl = [];
-        if (env('APP_ENV') === 'production') {
+        if (config('app.env') === 'production') {
             $this->apiUrl['CREDIT_CARD_CANCEL_API']
                 = 'https://core.spgateway.com/API/CreditCard/Cancel';
             $this->apiUrl['CREDIT_CARD_REFUND_API']

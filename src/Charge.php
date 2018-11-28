@@ -10,7 +10,7 @@ class Charge
 
     public function __construct(Helpers $helpers)
     {
-        if (env('APP_ENV') === 'production') {
+        if (config('app.env') === 'production') {
             $this->apiUrl['MPG_API']
                 = 'https://core.spgateway.com/MPG/mpg_gateway';
             $this->apiUrl['QUERY_TRADE_INFO_API']

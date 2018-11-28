@@ -15,7 +15,7 @@ class MPG
     public function __construct()
     {
         $this->apiUrl = [];
-        if (env('APP_ENV') === 'production') {
+        if (config('app.env') === 'production') {
             $this->apiUrl['MPG_API']
                 = 'https://core.spgateway.com/MPG/mpg_gateway';
             $this->apiUrl['QUERY_TRADE_INFO_API']
@@ -126,7 +126,7 @@ class MPG
         $tradeSha = $this->createMpgSHA256Encrypt($tradeInfo);
 
         $this->postDataEncrypted = [
-            'MerchantID' => env('SPGATEWAY_MERCHANT_ID'),
+            'MerchantID' => config('spgateway.mpg.MerchantID'),
             'TradeInfo'  => $tradeInfo,
             'TradeSha'   => $tradeSha,
             'Version'    => '1.4',
