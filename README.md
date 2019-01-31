@@ -1,11 +1,3 @@
-<p align="center">
-    <b>Special thanks to the generous sponsorship by:</b>
-    <br><br>
-    <a href="https://www.hourmasters.com">
-      <img src="https://trello-attachments.s3.amazonaws.com/58a52a5cba3fdf7e02fe0b46/5a5ca9636a152015ebcddf8c/fd59154d52b5593b6082d96466694f73/slogan-01.png" width=350>
-    </a>
-</p>
-
 # Laravel Spgateway
 [![Latest Stable Version](https://poser.pugx.org/leochien/laravel-spgateway/v/stable)](https://packagist.org/packages/leochien/laravel-spgateway)
     [![Total Downloads](https://poser.pugx.org/leochien/laravel-spgateway/downloads)](https://packagist.org/packages/leochien/laravel-spgateway)
@@ -147,28 +139,30 @@ $order = MPG::generate(
 
 ##### 參數表
 
-| 欄位            |     型態     |       可選值      |   預設  | 備註                              |
-|-----------------|:------------:|:-----------------:|:-------:|-----------------------------------|
-| MerchantOrderNo |    Varchar(20)    |                   |         | 商店自訂編號，若無填寫則由套件產生                      |
-| LangType        |    String    |   `zh-tw` / `en`  | `zh-tw` |                                   |
-| TradeLimit      |    Number    |      60 ~ 900     |   180   |                                   |
-| ExpireDate      | String (Ymd) |                   |         |      範例：20171231                             |
-| ReturnURL       |      Url     |                   |         |                                   |
-| NotifyURL       |      Url     |                   |         |                                   |
-| CustomerURL     |      Url     |                   |         |                                   |
-| ClientBackURL   |      Url     |                   |         |                                   |
-| EmailModify     |    Number    |     `0` / `1`     |    1    |                                   |
-| LoginType       |    Number    |     `0` / `1`     |    0    |                                   |
-| OrderComment    |    String    |                   |         |                                   |
-| TokenTerm       |    String    |                   |         | 信用卡快速結帳                    |
-| CREDIT          |    Number    |     `0` / `1`     |         | 信用卡一次付清                    |
-| CreditRed       |    Number    |     `0` / `1`     |         | 信用卡紅利                        |
-| InstFlag        |    Number    |     `0` / `1`     |         | 信用卡分期付款                    |
-| UNIONPAY        |    Number    |     `0` / `1`     |         | 銀聯卡                            |
-| WEBATM          |    Number    |     `0` / `1`     |         | WebATM                            |
-| VACC            |    Number    |     `0` / `1`     |         | ATM轉帳                           |
-| CVS             |    Number    |     `0` / `1`     |         | 超商代碼繳費                      |
-| BARCODE         |    Number    |     `0` / `1`     |         | 條碼繳費，訂單金額需介於20～20000 |
+| 欄位            |     型態     |       可選值      |   預設  | 備註                                            |
+|-----------------|:------------:|:-----------------:|:-------:|----------------------------------------------|
+| MerchantOrderNo |  Varchar(20) |                   |         | 商店自訂編號，若無填寫則由套件產生               |
+| LangType        |    String    |   `zh-tw` / `en`  | `zh-tw` |                                              |
+| TradeLimit      |    Number    |      60 ~ 900     |   180   |                                              |
+| ExpireDate      | String (Ymd) |                   |         |      範例：20171231                           |
+| ReturnURL       |      Url     |                   |         |                                              |
+| NotifyURL       |      Url     |                   |         |                                              |
+| CustomerURL     |      Url     |                   |         |                                              |
+| ClientBackURL   |      Url     |                   |         |                                              |
+| EmailModify     |    Number    |     `0` / `1`     |    1    |                                              |
+| LoginType       |    Number    |     `0` / `1`     |    0    |                                              |
+| OrderComment    |    String    |                   |         |                                              |
+| TokenTerm       |    String    |                   |         | 信用卡快速結帳                                |
+| CREDIT          |    Number    |     `0` / `1`     |         | 信用卡一次付清                                |
+| CreditRed       |    Number    |     `0` / `1`     |         | 信用卡紅利                                    |
+| InstFlag        |    Number    |     `0` / `1`     |         | 信用卡分期付款                                 |
+| UNIONPAY        |    Number    |     `0` / `1`     |         | 銀聯卡                                        |
+| WEBATM          |    Number    |     `0` / `1`     |         | WebATM                                       |
+| VACC            |    Number    |     `0` / `1`     |         | ATM轉帳                                      |
+| CVS             |    Number    |     `0` / `1`     |         | 超商代碼繳費                                  |
+| BARCODE         |    Number    |     `0` / `1`     |         | 條碼繳費，訂單金額需介於20～20000               |
+| CREDITAGREEMENT |    Number    |     `0` / `1`     |         | 約定信用卡授權                                |
+| TokenLife       |    String    |                   |         | 約定信用卡付款之有效日期，範例：1912（2019-12）  |
 
 ##### 備註
 * 支付方式若無選擇，默認開啟智付通後台設定方式
@@ -541,6 +535,86 @@ $refund = Refund::generate('20171121WJNBX5NNBP', 100);
 ##### 使用範例
 ```
 $res = $refund->send();
+```
+
+### 已約定信用卡付款
+
+#### 快速上手
+```
+// 產生付款必要資訊
+$charge = Charge::generate(
+    100,
+    'email@email.com',
+    'itemDesc',
+    'xxxxxxxxxxxxxxxxxx',
+    'xxx',
+    [
+        'MerchantOrderNo' => '20171121WJNBX5NNBP'
+    ]
+);
+
+// $transfer的 getPostData() 及 getPostDataEncrypted() 會回傳即將傳送到智付通的表單資料，可在此時紀錄log
+
+// 送出扣款
+$res = $charge->send();
+```
+#### 可用方法
+
+> ### generate ($amount, $email, $itemDesc, $tokenValue, $tokenTerm, $params)
+
+產生已約定信用卡付款必要欄位
+
+##### 參數
+
+1. `$amount (String)`: 金額
+2. `$email (String)`: 購買人 Email
+3. `$itemDesc (Integer)`: 商品描述
+4. `$tokenValue (Integer)`: 約定信用卡授權碼
+5. `$tokenTerm ()`: 約定信用卡付款之付款人綁定資料
+6. `$params ()`: 可選選項
+
+##### 可選參數
+
+| 欄位               | 必填 |  型態  | 備註                                       |
+|-------------------|:----:|:------:|-------------------------------------------|
+| MerchantOrderNo   |     | String | 訂單編號                                    |
+| TokenSwitch       |     | String | 當此參數為”on”時，才會啟用約定信用卡付款授權功能 |
+
+##### 回傳
+
+1. `(Class)`: Class實體，其中 getPostData() 及 getPostDataEncrypted() 包含即將送到智付通的表單資料
+
+##### 使用範例
+```
+$charge = Charge::generate(
+    100,
+    'email@email.com',
+    'itemDesc',
+    'xxxxxxxxxxxxxxxxxx',
+    'xxx',
+    [
+        'MerchantOrderNo' => '20171121WJNBX5NNBP'
+    ]
+);
+```
+
+> ### send()
+
+傳送已約定信用卡付款請求到智付通
+
+##### 回傳
+本文件未公開，請向合作之智付通業務人員索取
+```
+{
+    "Status": "..."
+    "Message": "..."
+    "Result": {...}
+}
+```
+
+##### 使用範例
+```
+$res = $transfer->send();
 ```
 
 ### 平台費用扣款指示
