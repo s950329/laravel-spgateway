@@ -270,13 +270,18 @@ class MPG
         }
 
         if (isset($params['InstFlag'])) {
-            array_walk(explode(',', $params['InstFlag']),
+            $instFlag = explode(',', $params['InstFlag']);
+            array_walk(
+                $instFlag,
                 function ($val, $key) {
                     if (!in_array($val, [1, 3, 6, 12, 18, 24])) {
-                        return $this->errorMessage('InstFlag',
-                            '期數必須為3、6、12、18、24');
+                        return $this->errorMessage(
+                            'InstFlag',
+                            '期數必須為3、6、12、18、24'
+                        );
                     }
-                });
+                }
+            );
         }
 
         if (isset($params['UNIONPAY'])) {
