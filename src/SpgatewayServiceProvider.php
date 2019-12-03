@@ -1,4 +1,5 @@
 <?php
+
 namespace LeoChien\Spgateway;
 
 use Illuminate\Support\ServiceProvider;
@@ -48,6 +49,10 @@ class SpgatewayServiceProvider extends ServiceProvider
 
     protected function registerConfig()
     {
+        $this->mergeConfigFrom(
+            __DIR__ . '/../config/spgateway.php', 'spgateway'
+        );
+        
         $this->publishes([
             __DIR__ . '/../config/spgateway.php' => config_path('spgateway.php'),
         ]);
