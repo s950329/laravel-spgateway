@@ -283,8 +283,11 @@ class Receipt
      */
     private function encryptInvalid()
     {
-        $postDataEncrypted
-            = $this->helpers->encryptPostData($this->invalidPostData);
+        $postDataEncrypted = $this->helpers->encryptPostData(
+            $this->invalidPostData,
+            config('spgateway.receipt.HashKey'),
+            config('spgateway.receipt.HashIV')
+        );
 
         $this->invalidPostDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
