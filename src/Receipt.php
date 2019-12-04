@@ -339,7 +339,11 @@ class Receipt
 
         $postDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
-            'PostData_'   => $this->helpers->encryptPostData($postData),
+            'PostData_'   => $this->helpers->encryptPostData(
+                $postData,
+                config('spgateway.receipt.HashKey'),
+                config('spgateway.receipt.HashIV')
+            ),
         ];
 
         $res = $this->helpers->sendPostRequest(
