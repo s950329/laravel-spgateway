@@ -136,11 +136,7 @@ class Receipt
      */
     private function encrypt()
     {
-        $postDataEncrypted = $this->helpers->encryptPostData(
-            $this->postData,
-            config('spgateway.receipt.HashKey'),
-            config('spgateway.receipt.HashIV')
-        );
+        $postDataEncrypted = $this->encryptPostData($this->postData);
 
         $this->postDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
@@ -216,12 +212,7 @@ class Receipt
      */
     private function encryptTrigger()
     {
-        $postDataEncrypted = $this->helpers
-            ->encryptPostData(
-                $this->triggerPostData,
-                config('spgateway.receipt.HashKey'),
-                config('spgateway.receipt.HashIV')
-            );
+        $postDataEncrypted = $this->encryptPostData($this->triggerPostData);
 
         $this->triggerPostDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
@@ -283,11 +274,7 @@ class Receipt
      */
     private function encryptInvalid()
     {
-        $postDataEncrypted = $this->helpers->encryptPostData(
-            $this->invalidPostData,
-            config('spgateway.receipt.HashKey'),
-            config('spgateway.receipt.HashIV')
-        );
+        $postDataEncrypted = $this->encryptPostData($this->invalidPostData);
 
         $this->invalidPostDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
@@ -339,11 +326,7 @@ class Receipt
 
         $postDataEncrypted = [
             'MerchantID_' => config('spgateway.receipt.MerchantID'),
-            'PostData_'   => $this->helpers->encryptPostData(
-                $postData,
-                config('spgateway.receipt.HashKey'),
-                config('spgateway.receipt.HashIV')
-            ),
+            'PostData_'   => $this->encryptPostData($postData),
         ];
 
         $res = $this->helpers->sendPostRequest(
@@ -358,6 +341,21 @@ class Receipt
         }
 
         return $result;
+    }
+
+    /**
+     * 發票相關API Post data加密
+     *
+     * @param array $postData
+     * @return string
+     */
+    private function encryptPostData(array $postData): string
+    {
+        return $this->helpers->encryptPostData(
+            $postData,
+            config('spgateway.receipt.HashKey'),
+            config('spgateway.receipt.HashIV')
+        );
     }
 
     public function getPostData()
