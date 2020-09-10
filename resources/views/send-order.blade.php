@@ -5,12 +5,12 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>正在導向到智付通...</title>
+    <title>正在導向到藍新金流...</title>
 
     <style>
         body {
             padding: 1em;
-            color: #F5A223;
+            color: #0B0B61;
             text-align: center;
             width: 80%;
             margin: 0 auto;
@@ -48,7 +48,7 @@
     @endforeach
 </form>
 
-<h1>正在導向到智付通...</h1>
+<h1>正在導向到藍新金流...</h1>
 <div class="loader loader--style3" title="2">
     <svg version="1.1" id="loader-1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
          x="0px" y="0px"

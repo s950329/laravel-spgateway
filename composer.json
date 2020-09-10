@@ -9,8 +9,9 @@
         "email": "leo@hourmasters.com"
     }],
     "require": {
-        "php": ">=7",
-        "guzzlehttp/guzzle": "~6.0"
+        "php": ">=7.2.5",
+        "laravel/framework": "^7|^8",
+        "guzzlehttp/guzzle": "^6.5.5|^7.0.1"
     },
     "autoload": {
         "psr-4": {
