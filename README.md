@@ -20,8 +20,8 @@ Laravel Spgateway是一個開源的 [智付通](https://www.spgateway.com/) 非�
 
 ## 要求
 
-1. PHP >= 7
-2. Laravel >= 5
+1. PHP >= 7.2.5
+2. Laravel >= 7
 3. Composer
 
 ## 安裝
