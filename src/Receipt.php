@@ -71,6 +71,27 @@ class Receipt
         $params['ItemPrice'] = implode('|', $params['ItemPrice']);
         $params['ItemAmt'] = implode('|', $itemAmt);
 
+        /** 混和稅率時，需要各別指定每個銷售商品的稅別，銷售金額及稅額也要重新計算 */
+        if ($params['TaxType'] == '9') {
+            $amtSales = 0;
+            $amtZero = 0;
+            $amtFree = 0;
+            for($i=0; $i<sizeof($params['ItemTaxType']); $i++) {
+                if ($params['ItemTaxType'][$i] == 1) {
+                    $amtSales += $params['ItemPrice'][$i];
+                }
+                if ($params['ItemTaxType'][$i] == 2) {
+                    $amtZero += $params['ItemPrice'][$i];
+                }
+                if ($params['ItemTaxType'][$i] == 3) {
+                    $amtFree += $params['ItemPrice'][$i];
+                }
+            }
+            $params['ItemTaxType'] = implode('|', $params['ItemTaxType']);
+            $params['Amt'] = $this->priceBeforeTax($amtSales,  $params['TaxRate']) + $amtZero + $amtFree;
+            $params['TaxAmt'] = $this->calcTax($amtSales, $params['TaxRate']);
+        }
+
         // 智付通開立電子發票必要資訊
         $postData = [
             'RespondType'      => $params['RespondType'] ?? 'JSON',
@@ -93,12 +114,12 @@ class Receipt
             'TaxType'          => $params['TaxType'] ?? '1',
             'TaxRate'          => $params['TaxRate'] ?? 5,
             'CustomsClearance' => $params['CustomsClearance'] ?? null,
-            'Amt'              => $this->priceBeforeTax($params['TotalAmt'],
+            'Amt'              => $params['Amt'] ?? $this->priceBeforeTax($params['TotalAmt'],
                 $params['TaxRate']),
             'AmtSales'         => $params['AmtSales'] ?? null,
             'AmtZero'          => $params['AmtZero'] ?? null,
             'AmtFree'          => $params['AmtFree'] ?? null,
-            'TaxAmt'           => $this->calcTax($params['TotalAmt'],
+            'TaxAmt'           => $params['TaxAmt'] ?? $this->calcTax($params['TotalAmt'],
                 $params['TaxRate']),
             'TotalAmt'         => $params['TotalAmt'],
             'ItemName'         => $params['ItemName'],
