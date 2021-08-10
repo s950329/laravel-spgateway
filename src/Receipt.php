@@ -65,12 +65,6 @@ class Receipt
                 * $params['ItemPrice'][$k];
         }
 
-        $params['ItemName'] = implode('|', $params['ItemName']);
-        $params['ItemCount'] = implode('|', $params['ItemCount']);
-        $params['ItemUnit'] = implode('|', $params['ItemUnit']);
-        $params['ItemPrice'] = implode('|', $params['ItemPrice']);
-        $params['ItemAmt'] = implode('|', $itemAmt);
-
         /** 混和稅率時，需要各別指定每個銷售商品的稅別，銷售金額及稅額也要重新計算 */
         if ($params['TaxType'] == '9') {
             $amtSales = 0;
@@ -87,10 +81,19 @@ class Receipt
                     $amtFree += $params['ItemPrice'][$i];
                 }
             }
+            $params['AmtSales'] = $this->priceBeforeTax($amtSales, $params['TaxRate']);
+            $params['AmtZero'] = $amtZero;
+            $params['AmtFree'] = $amtFree;
             $params['ItemTaxType'] = implode('|', $params['ItemTaxType']);
-            $params['Amt'] = $this->priceBeforeTax($amtSales,  $params['TaxRate']) + $amtZero + $amtFree;
+            $params['Amt'] = $params['AmtSales'] + $params['AmtZero'] + $params['AmtFree'];
             $params['TaxAmt'] = $this->calcTax($amtSales, $params['TaxRate']);
         }
+
+        $params['ItemName'] = implode('|', $params['ItemName']);
+        $params['ItemCount'] = implode('|', $params['ItemCount']);
+        $params['ItemUnit'] = implode('|', $params['ItemUnit']);
+        $params['ItemPrice'] = implode('|', $params['ItemPrice']);
+        $params['ItemAmt'] = implode('|', $itemAmt);
 
         // 智付通開立電子發票必要資訊
         $postData = [
