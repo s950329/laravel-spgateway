@@ -49,7 +49,7 @@ class Receipt
      */
     public function generate(array $params)
     {
-        $params['TaxType'] = $params['TaxType'] ?? 1;
+        $params['TaxType'] = $params['TaxType'] ?? '1';
         $params['TaxRate'] = $params['TaxRate'] ?? 5;
         $params['Category'] = $params['Category'] ?? 'B2C';
 
