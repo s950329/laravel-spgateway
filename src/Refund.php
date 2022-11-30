@@ -17,18 +17,18 @@ class Refund
         $this->apiUrl = [];
         if (config('app.env') === 'production') {
             $this->apiUrl['CREDIT_CARD_CANCEL_API']
-                = 'https://core.spgateway.com/API/CreditCard/Cancel';
+                = 'https://core.newebpay.com/API/CreditCard/Cancel';
             $this->apiUrl['CREDIT_CARD_REFUND_API']
-                = 'https://core.spgateway.com/API/CreditCard/Close';
+                = 'https://core.newebpay.com/API/CreditCard/Close';
             $this->apiUrl['DELAYED_REFUND_API']
-                = 'https://core.spgateway.com/API/Refund';
+                = 'https://core.newebpay.com/API/Refund';
         } else {
             $this->apiUrl['CREDIT_CARD_CANCEL_API']
-                = 'https://ccore.spgateway.com/API/CreditCard/Cancel';
+                = 'https://ccore.newebpay.com/API/CreditCard/Cancel';
             $this->apiUrl['CREDIT_CARD_REFUND_API']
-                = 'https://ccore.spgateway.com/API/CreditCard/Close';
+                = 'https://ccore.newebpay.com/API/CreditCard/Close';
             $this->apiUrl['DELAYED_REFUND_API']
-                = 'https://ccore.spgateway.com/API/Refund';
+                = 'https://ccore.newebpay.com/API/Refund';
         }
 
         $this->helpers = new Helpers();

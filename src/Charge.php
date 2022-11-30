@@ -14,9 +14,9 @@ class Charge
     public function __construct(Helpers $helpers)
     {
         if (config('app.env') === 'production') {
-            $this->apiUrl = 'https://core.spgateway.com/API/CreditCard';
+            $this->apiUrl = 'https://core.newebpay.com/API/CreditCard';
         } else {
-            $this->apiUrl = 'https://ccore.spgateway.com/API/CreditCard';
+            $this->apiUrl = 'https://ccore.newebpay.com/API/CreditCard';
         }
 
         $this->helpers = $helpers;
