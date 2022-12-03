@@ -15,10 +15,10 @@ class Transfer
     {
         if (config('app.env') === 'production') {
             $this->apiUrl['CHARGE_INSTRUCT_API']
-                = 'https://core.spgateway.com/API/ChargeInstruct';
+                = 'https://core.newebpay.com/API/ChargeInstruct';
         } else {
             $this->apiUrl['CHARGE_INSTRUCT_API']
-                = 'https://ccore.spgateway.com/API/ChargeInstruct';
+                = 'https://ccore.newebpay.com/API/ChargeInstruct';
         }
 
         $this->helpers = new Helpers();

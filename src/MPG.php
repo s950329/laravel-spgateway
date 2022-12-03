@@ -40,14 +40,14 @@ class MPG
         $this->apiUrl = [];
         if ('production' === config('app.env')) {
             $this->apiUrl['MPG_API']
-                = 'https://core.spgateway.com/MPG/mpg_gateway';
+                = 'https://core.newebpay.com/MPG/mpg_gateway';
             $this->apiUrl['QUERY_TRADE_INFO_API']
-                = 'https://core.spgateway.com/API/QueryTradeInfo';
+                = 'https://core.newebpay.com/API/QueryTradeInfo';
         } else {
             $this->apiUrl['MPG_API']
-                = 'https://ccore.spgateway.com/MPG/mpg_gateway';
+                = 'https://ccore.newebpay.com/MPG/mpg_gateway';
             $this->apiUrl['QUERY_TRADE_INFO_API']
-                = 'https://ccore.spgateway.com/API/QueryTradeInfo';
+                = 'https://ccore.newebpay.com/API/QueryTradeInfo';
         }
 
         $this->helpers = new Helpers();
